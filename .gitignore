@@ -27,3 +27,14 @@
 *.exe
 *.out
 *.app
+/slang/.vs/slang/v15
+*.suo
+*.ilk
+*.pdb
+*.tlog
+*.log
+*.idb
+*.vcxproj
+*.filters
+*.user
+*.sln
