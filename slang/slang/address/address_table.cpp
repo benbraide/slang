@@ -10,6 +10,54 @@ slang::address::table::~table(){
 		if (entry.second.ptr != nullptr)
 			delete[] entry.second.ptr;
 	}
+
+	for (auto &entry : tls_captures_){
+		if (entry.second.ptr != nullptr)
+			delete[] entry.second.ptr;
+	}
+
+	for (auto &entry : tls_){//Free thread local storage
+		if (entry.second.ptr != nullptr)
+			delete[] entry.second.ptr;
+	}
+}
+
+void slang::address::table::on_thread_entry(){
+	exclusive_lock_type guard(lock_);
+	for (auto &entry : tls_captures_){//Initialize thread local storage
+		auto &tls_entry = tls_[entry.first];
+
+		tls_entry = entry.second;
+		if (tls_entry.ptr != nullptr){//Duplicate bytes
+			tls_entry.ptr = new char[tls_entry.actual_size];
+			std::strncpy(tls_entry.ptr, entry.second.ptr, tls_entry.actual_size);
+		}
+	}
+}
+
+void slang::address::table::on_thread_exit(){
+	exclusive_lock_type guard(lock_);
+	for (auto &entry : tls_){//Free thread local storage
+		if (entry.second.ptr != nullptr)
+			delete[] entry.second.ptr;
+	}
+}
+
+void slang::address::table::capture_tls(uint64_type value){
+	exclusive_lock_type guard(lock_);
+
+	auto entry = find_(value);
+	if (entry == nullptr)
+		return;
+
+	SLANG_SET(entry->attributes, attribute_type::tls);
+	auto &capture = tls_captures_[value];
+
+	capture = *entry;
+	if (capture.ptr != nullptr){//Duplicate bytes
+		capture.ptr = new char[capture.actual_size];
+		std::strncpy(capture.ptr, entry->ptr, capture.actual_size);
+	}
 }
 
 void slang::address::table::set_dependency(uint64_type value, dependency_ptr_type dependency){
@@ -148,6 +196,11 @@ bool slang::address::table::deallocate_(uint64_type value, bool merge){
 	auto entry = head_list_.find(value);
 	if (entry == head_list_.end())
 		return false;
+
+	if (SLANG_IS(entry->second.attributes, attribute_type::tls)){
+		//#TODO: Throw exception
+		return false;
+	}
 
 	if (entry->second.ref_count > 0u && --entry->second.ref_count > 0u)
 		return true;//Referenced by some other object
@@ -309,18 +362,11 @@ slang::address::head *slang::address::table::find_(uint64_type value) const{
 	}
 
 	auto entry = head_list_.find(value);
-	auto thread_id = std::this_thread::get_id();
-
-	if (entry == head_list_.end()){
-		if (thread_id == thread_id_ || (entry = tls_[thread_id].find(value)) == tls_[thread_id].end())
-			return nullptr;//Thread is main OR Not found in tls
-		return const_cast<head *>(&entry->second);
-	}
-
-	if (SLANG_IS(entry->second.attributes, attribute_type::tls) && thread_id != thread_id_){
-		//#TODO: Throw exception
+	if (entry == head_list_.end())//Not found
 		return nullptr;
-	}
+
+	if (SLANG_IS(entry->second.attributes, attribute_type::tls) && std::this_thread::get_id() != thread_id_)
+		return &tls_[value];//Get corresponding head in current thread
 
 	return const_cast<head *>(&entry->second);
 }
@@ -331,27 +377,21 @@ slang::address::head *slang::address::table::get_head_(uint64_type value) const{
 		return nullptr;
 	}
 
-	auto thread_id = std::this_thread::get_id();
+	head *entry_head = nullptr;
 	for (auto &entry : head_list_){
 		if (entry.first == value || (entry.first < value && value < (entry.first + entry.second.actual_size))){
-			if (SLANG_IS(entry.second.attributes, attribute_type::tls) && thread_id != thread_id_){
-				//#TODO: Throw exception
-				return nullptr;
-			}
-
-			return const_cast<head *>(&entry.second);
+			entry_head = const_cast<head *>(&entry.second);
+			break;
 		}
 	}
 
-	if (thread_id == thread_id_)
-		return nullptr;//Thread is main
+	if (entry_head == nullptr)
+		return nullptr;
 
-	for (auto &entry : tls_[thread_id]){//Search tls
-		if (entry.first == value || value < (entry.first + entry.second.actual_size))
-			return const_cast<head *>(&entry.second);
-	}
+	if (SLANG_IS(entry_head->attributes, attribute_type::tls) && std::this_thread::get_id() != thread_id_)
+		return &tls_[value];//Get corresponding head in current thread
 
-	return nullptr;
+	return entry_head;
 }
 
 void slang::address::table::copy_(uint64_type destination, uint64_type source, uint_type size){
@@ -540,4 +580,4 @@ slang::address::table::uint64_type slang::address::table::get_available_(uint_ty
 	return 0ull;
 }
 
-slang::address::table::tls_type slang::address::table::tls_;
+thread_local slang::address::table::head_list_type slang::address::table::tls_;

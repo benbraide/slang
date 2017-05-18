@@ -32,7 +32,6 @@ namespace slang{
 			typedef std::shared_lock<lock_type> shared_lock_type;
 
 			typedef std::unordered_map<uint64_type, head> head_list_type;
-			typedef std::unordered_map<thread_id_type, head_list_type> tls_type;
 			typedef std::map<uint64_type, uint_type> available_list_type;
 
 			typedef std::shared_ptr<dependency> dependency_ptr_type;
@@ -41,6 +40,12 @@ namespace slang{
 			explicit table(uint64_type protected_range = 0u);
 
 			~table();
+
+			void on_thread_entry();
+
+			void on_thread_exit();
+
+			void capture_tls(uint64_type value);
 
 			void set_dependency(uint64_type value, dependency_ptr_type dependency);
 
@@ -278,11 +283,12 @@ namespace slang{
 
 			uint64_type get_available_(uint_type size, uint64_type match = 0ull);
 
-			static tls_type tls_;
+			static thread_local head_list_type tls_;
 
 			uint64_type next_;
 			uint64_type protected_;
 			head_list_type head_list_;
+			head_list_type tls_captures_;
 			available_list_type available_list_;
 			dependency_list_type dependencies_;
 			thread_id_type thread_id_;
