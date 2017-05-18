@@ -6,6 +6,7 @@
 #include <thread>
 #include <shared_mutex>
 #include <memory>
+#include <functional>
 #include <unordered_map>
 #include <map>
 #include <climits>
@@ -13,6 +14,8 @@
 
 #include "address_head.h"
 #include "address_dependency.h"
+#include "address_range.h"
+#include "address_watcher.h"
 
 namespace slang_test{
 	class address_table_test;
@@ -25,6 +28,7 @@ namespace slang{
 			typedef head::attribute_type attribute_type;
 			typedef head::uint64_type uint64_type;
 			typedef head::uint_type uint_type;
+			typedef range<uint64_type> range_type;
 
 			typedef std::thread::id thread_id_type;
 			typedef std::shared_mutex lock_type;
@@ -36,6 +40,10 @@ namespace slang{
 
 			typedef std::shared_ptr<dependency> dependency_ptr_type;
 			typedef std::unordered_map<uint64_type, dependency_ptr_type> dependency_list_type;
+
+			typedef std::shared_ptr<watcher> watcher_ptr_type;
+			typedef std::map<thread_id_type, watcher_ptr_type> watcher_ptr_list_type;
+			typedef std::unordered_map<uint64_type, watcher_ptr_list_type> watcher_list_type;
 
 			explicit table(uint64_type protected_range = 0u);
 
@@ -52,8 +60,17 @@ namespace slang{
 			template <typename dependency_type, typename... arg_types>
 			void set_dependency(uint64_type value, arg_types &&... args){
 				exclusive_lock_type guard(lock_);
-				dependencies_[value] = std::make_shared<dependency_type>(std::forward<arg_types>(args)...);
+				set_dependency(value, std::make_shared<dependency_type>(std::forward<arg_types>(args)...));
 			}
+
+			watcher *watch(uint64_type value, watcher_ptr_type watcher);
+
+			template <typename watcher_type, typename... arg_types>
+			watcher *watch(uint64_type value, arg_types &&... args){
+				return watch(value, std::make_shared<watcher_type>(std::forward<arg_types>(args)...));
+			}
+
+			watcher *find_watcher(uint64_type value) const;
 
 			dependency *get_dependency(uint64_type value) const;
 
@@ -184,6 +201,8 @@ namespace slang{
 
 			head *get_head_(uint64_type value) const;
 
+			watcher *find_watcher_(uint64_type value) const;
+
 			void copy_(uint64_type destination, uint64_type source, uint_type size);
 
 			void write_(uint64_type value, const char *source, uint_type size, bool is_array);
@@ -291,6 +310,7 @@ namespace slang{
 			head_list_type tls_captures_;
 			available_list_type available_list_;
 			dependency_list_type dependencies_;
+			watcher_list_type watchers_;
 			thread_id_type thread_id_;
 			mutable lock_type lock_;
 		};

@@ -65,6 +65,28 @@ void slang::address::table::set_dependency(uint64_type value, dependency_ptr_typ
 	dependencies_[value] = dependency;
 }
 
+slang::address::watcher *slang::address::table::watch(uint64_type value, watcher_ptr_type watcher){
+	exclusive_lock_type guard(lock_);
+	
+	auto entry = find_(value);
+	if (entry == nullptr){
+		//#TODO: Throw exception
+		return nullptr;
+	}
+
+	if (SLANG_IS(entry->attributes, attribute_type::tls))
+		watchers_[value][std::this_thread::get_id()] = watcher;
+	else//No thread local storage
+		watchers_[value][thread_id_] = watcher;
+
+	return watcher.get();
+}
+
+slang::address::watcher *slang::address::table::find_watcher(uint64_type value) const{
+	shared_lock_type guard(lock_);
+	return find_watcher_(value);
+}
+
 slang::address::dependency *slang::address::table::get_dependency(uint64_type value) const{
 	shared_lock_type guard(lock_);
 	auto entry = dependencies_.find(value);
@@ -140,11 +162,13 @@ void slang::address::table::copy(uint64_type destination, uint64_type source){
 	auto destination_entry = find_(destination);
 	if (destination_entry == nullptr){
 		//#TODO: Throw exception
+		return;
 	}
 
 	auto source_entry = find_(source);
 	if (source_entry == nullptr){
 		//#TODO: Throw exception
+		return;
 	}
 
 	if (source_entry->size < destination_entry->size){//Copy bytes and zero rest
@@ -153,6 +177,10 @@ void slang::address::table::copy(uint64_type destination, uint64_type source){
 	}
 	else//Direct copy
 		std::strncpy(destination_entry->ptr, source_entry->ptr, destination_entry->size);
+
+	auto watcher = find_watcher_(destination_entry->value);
+	if (watcher != nullptr)
+		watcher->on_change(destination_entry->value);//Alert watcher
 }
 
 void slang::address::table::set(uint64_type value, char c, uint_type size){
@@ -165,16 +193,6 @@ void slang::address::table::write(uint64_type destination, const char *source, u
 	write_(destination, source, size, true);
 }
 
-void slang::address::table::read(uint64_type value, char *buffer, uint_type size) const{
-	shared_lock_type guard(lock_);
-	read_(value, buffer, size);
-}
-
-void slang::address::table::convert_numeric(uint64_type destination, uint64_type source) const{
-	shared_lock_type guard(lock_);
-	convert_numeric_(destination, source);
-}
-
 void slang::address::table::write(uint64_type destination, const wchar_t *source, uint_type size){
 	write(destination, reinterpret_cast<const char *>(&source), size * sizeof(wchar_t));
 }
@@ -185,6 +203,16 @@ void slang::address::table::write(uint64_type destination, const char *source){
 
 void slang::address::table::write(uint64_type destination, const wchar_t *source){
 	return write(destination, source, static_cast<uint_type>(std::wcslen(source) + 1));
+}
+
+void slang::address::table::read(uint64_type value, char *buffer, uint_type size) const{
+	shared_lock_type guard(lock_);
+	read_(value, buffer, size);
+}
+
+void slang::address::table::convert_numeric(uint64_type destination, uint64_type source) const{
+	shared_lock_type guard(lock_);
+	convert_numeric_(destination, source);
 }
 
 bool slang::address::table::deallocate_(uint64_type value, bool merge){
@@ -394,6 +422,25 @@ slang::address::head *slang::address::table::get_head_(uint64_type value) const{
 	return entry_head;
 }
 
+slang::address::watcher *slang::address::table::find_watcher_(uint64_type value) const{
+	auto entry = find_(value);
+	if (entry == nullptr)
+		return nullptr;
+
+	auto watcher_entry = watchers_.find(value);
+	if (watcher_entry == watchers_.end())
+		return nullptr;
+
+	thread_id_type id;
+	if (SLANG_IS(entry->attributes, attribute_type::tls))
+		id = std::this_thread::get_id();
+	else//No thread local storage
+		id = thread_id_;
+
+	auto tls_entry = watcher_entry->second.find(id);
+	return (tls_entry == watcher_entry->second.end()) ? nullptr : tls_entry->second.get();
+}
+
 void slang::address::table::copy_(uint64_type destination, uint64_type source, uint_type size){
 	if (size == 0u)
 		return;
@@ -428,6 +475,7 @@ void slang::address::table::write_(uint64_type value, const char *source, uint_t
 
 	head *entry = nullptr;
 	uint_type available_size = 0u, ptr_index = 0u;
+	watcher *watcher = nullptr;
 
 	while (size > 0u){
 		if (available_size == 0u){//Get next block
@@ -463,6 +511,9 @@ void slang::address::table::write_(uint64_type value, const char *source, uint_t
 			--size;
 			++ptr_index;
 		}
+
+		if ((watcher = find_watcher_(entry->value)) != nullptr)
+			watcher->on_change(entry->value);//Alert watcher
 	}
 
 	if (size > 0u){

@@ -3,6 +3,8 @@
 #ifndef SLANG_ADDRESS_HEAD_H
 #define SLANG_ADDRESS_HEAD_H
 
+#include <cstdlib>
+
 #include "../common/preprocessor.h"
 
 namespace slang{
