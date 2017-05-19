@@ -33,7 +33,8 @@ namespace slang{
 				variadic		= (1 << 0x000A),
 				final_			= (1 << 0x000B),
 				rval			= (1 << 0x000C),
-				static_array	= (1 << 0x000D),
+				strong			= (1 << 0x000D),
+				nan				= (1 << 0x000E),
 			};
 
 			enum class id_type{
@@ -69,8 +70,9 @@ namespace slang{
 				union_,
 				struct_,
 				class_,
-				string_,
 				wstring_,
+				string_,
+				nan,
 			};
 
 			enum class match_type{
@@ -135,6 +137,8 @@ namespace slang{
 
 			virtual bool is_variant();
 
+			virtual bool is_void();
+
 			virtual bool is_any();
 
 			virtual bool is_auto();
@@ -163,7 +167,15 @@ namespace slang{
 
 			virtual bool is_pointer();
 
+			virtual bool is_strong_pointer();
+
 			virtual bool is_string();
+
+			virtual bool is_const_string();
+
+			virtual bool is_wstring();
+
+			virtual bool is_const_wstring();
 
 			virtual bool is_array();
 
@@ -171,7 +183,11 @@ namespace slang{
 
 			virtual bool is_function();
 
+			virtual bool is_strong_function();
+
 			virtual bool is_nullptr();
+
+			virtual bool is_nan();
 
 			virtual bool is_ref();
 

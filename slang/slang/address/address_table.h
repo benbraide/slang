@@ -55,6 +55,8 @@ namespace slang{
 
 			void capture_tls(uint64_type value);
 
+			void protect();
+
 			void set_dependency(uint64_type value, dependency_ptr_type dependency);
 
 			template <typename dependency_type, typename... arg_types>
@@ -94,7 +96,7 @@ namespace slang{
 				auto entry = allocate(sizeof(value_type));
 				if (entry != nullptr){//Successful allocation
 					entry->attributes = attribute_type::write_protect;
-					if (std::is_floating_point<value_type>::value)
+					if (std::is_floating_point<std::decay_t<value_type>>::value)
 						SLANG_SET(entry->attributes, attribute_type::is_float);
 
 					*reinterpret_cast<value_type *>(entry->ptr) = value;

@@ -60,6 +60,10 @@ void slang::address::table::capture_tls(uint64_type value){
 	}
 }
 
+void slang::address::table::protect(){
+	protected_ = (next_ - 1);
+}
+
 void slang::address::table::set_dependency(uint64_type value, dependency_ptr_type dependency){
 	exclusive_lock_type guard(lock_);
 	dependencies_[value] = dependency;
@@ -240,12 +244,8 @@ bool slang::address::table::deallocate_(uint64_type value, bool merge){
 		delete[] entry->second.ptr;
 	
 	head_list_.erase(entry);
-	auto dependency_entry = dependencies_.find(value);
-	if (dependency_entry != dependencies_.end()){//Remove dependency
-		if (dependency_entry->second != nullptr)
-			dependency_entry->second->no_address_deallocation();
-		dependencies_.erase(dependency_entry);
-	}
+	watchers_.erase(value);
+	dependencies_.erase(value);
 
 	return true;
 }

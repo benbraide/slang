@@ -12,7 +12,9 @@ slang::storage::temp::temp()
 }
 
 slang::storage::temp::~temp(){
-	common::env::temp_storage = previous_temp_;
+	if (common::env::temp_storage == this)//Restore previous
+		common::env::temp_storage = previous_temp_;
+
 	for (auto &entry : value_list_)
 		clean_(entry);
 }

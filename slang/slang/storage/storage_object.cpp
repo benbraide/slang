@@ -82,5 +82,5 @@ void slang::storage::object::clean_(value_type &value){
 }
 
 void slang::storage::object::use_(const std::string &key, value_type &value){
-
+	//#TODO: Implement
 }

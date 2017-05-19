@@ -35,7 +35,11 @@ slang::type::object *slang::type::object::remove(attribute attributes){
 		return this;
 
 	auto underlying_type = this->underlying_type();
-	return (underlying_type == nullptr) ? this : underlying_type->remove(attributes);
+	if (underlying_type == nullptr)
+		return this;
+
+	auto value = underlying_type->remove(attributes);
+	return (value == underlying_type) ? this : value;
 }
 
 slang::type::object *slang::type::object::remove_pointer(){
@@ -156,6 +160,10 @@ bool slang::type::object::is_compatible(object *type){
 
 bool slang::type::object::is_variant(){
 	return is(attribute::variant);
+}
+
+bool slang::type::object::is_void(){
+	return is(id_type::void_);
 }
 
 bool slang::type::object::is_any(){
@@ -288,8 +296,24 @@ bool slang::type::object::is_pointer(){
 	return is(id_type::pointer);
 }
 
+bool slang::type::object::is_strong_pointer(){
+	return (is_pointer() && !is_dynamic());
+}
+
 bool slang::type::object::is_string(){
-	return (is(id_type::pointer) && remove_pointer()->is(id_type::char_));
+	return (is_strong_pointer() && remove_pointer()->is(id_type::char_));
+}
+
+bool slang::type::object::is_const_string(){
+	return (is_const() && is_string());
+}
+
+bool slang::type::object::is_wstring(){
+	return (is_strong_pointer() && remove_pointer()->is(id_type::wchar));
+}
+
+bool slang::type::object::is_const_wstring(){
+	return (is_const() && is_wstring());
 }
 
 bool slang::type::object::is_array(){
@@ -297,15 +321,23 @@ bool slang::type::object::is_array(){
 }
 
 bool slang::type::object::is_static_array(){
-	return is(attribute::static_array);
+	return (is_array() && !is_dynamic());
 }
 
 bool slang::type::object::is_function(){
 	return is(id_type::function);
 }
 
+bool slang::type::object::is_strong_function(){
+	return (is_function() && !is_dynamic());
+}
+
 bool slang::type::object::is_nullptr(){
 	return is(id_type::nullptr_);
+}
+
+bool slang::type::object::is_nan(){
+	return is(attribute::nan);
 }
 
 bool slang::type::object::is_ref(){
@@ -349,6 +381,11 @@ bool slang::type::object::is_modified(){
 }
 
 void slang::type::object::static_name_(){
+	if (is_nan()){
+		name_ = "nan_t";
+		return;
+	}
+
 	switch (id_){
 	case id_type::void_:
 		name_ = "void";
@@ -437,6 +474,16 @@ void slang::type::object::static_name_(){
 }
 
 void slang::type::object::static_size_(){
+	if (is_nan()){
+		size_ = static_cast<size_type>(1);
+		return;
+	}
+
+	if (is_ref()){
+		size_ = static_cast<size_type>(sizeof(address::table::uint64_type));
+		return;
+	}
+
 	switch (id_){
 	case id_type::bool_:
 		size_ = static_cast<size_type>(sizeof(char));
