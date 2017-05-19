@@ -51,10 +51,10 @@
 #define SLANG_EQUAL_ENUMS_(x, t, l, r) ((l) == (x)(t)(r))
 #define SLANG_EQUAL_ENUMS(x, l, r) SLANG_EQUAL_ENUMS_(x, int, l, r)
 
-#define SLANG_INCREMENT_ENUM_(x, t, v) (v) = (x)((t)(v) + (t)1)
-#define SLANG_INCREMENT_ENUM(x, v) SLANG_INCREMENT_ENUM_(x, int, v)
+#define SLANG_INCREMENT_ENUM(t, v) (v) = static_cast<decltype(v)>((t)(v) + (t)1)
+#define SLANG_INCREMENT_ENUM2(v) (v) = static_cast<decltype(v)>((int)(v) + 1)
 
-#define SLANG_DECREMENT_ENUM_(x, t, v) (v) = (x)((t)(v) - (t)1)
-#define SLANG_DECREMENT_ENUM(x, v) SLANG_DECREMENT_ENUM_(x, int, v)
+#define SLANG_DECREMENT_ENUM(t, v) (v) = static_cast<decltype(v)>((t)(v) + (t)1)
+#define SLANG_DECREMENT_ENUM2(v) (v) = static_cast<decltype(v)>((int)(v) + 1)
 
 #endif /* !SLANG_PREPROCESSOR_H */

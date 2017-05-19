@@ -8,6 +8,8 @@ slang::address::watcher::uint64_type slang::address::watcher::add(callback_type 
 		callback_list_[id = *reinterpret_cast<uint64_type *>(&callback)] = callback;
 	else//Use id
 		callback_list_[id] = callback;
+
+	return id;
 }
 
 void slang::address::watcher::remove(uint64_type id){
