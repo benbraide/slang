@@ -4,6 +4,7 @@
 #define SLANG_PRIMITIVE_TYPES_H
 
 #include "type_object.h"
+#include "bool_type.h"
 
 namespace slang{
 	namespace type{
@@ -12,111 +13,116 @@ namespace slang{
 
 		template <>
 		struct mapper<std::nullptr_t>{
-			static const object::id_type id = object::id_type::nullptr_;
+			static const type::id id = type::id::nullptr_;
 		};
 
 		template <>
 		struct mapper<void>{
-			static const object::id_type id = object::id_type::void_;
+			static const type::id id = type::id::void_;
 		};
 
 		template <>
-		struct mapper<object::bool_type>{
-			static const object::id_type id = object::id_type::bool_;
+		struct mapper<bool>{
+			static const type::id id = type::id::bool_;
+		};
+
+		template <>
+		struct mapper<bool_type>{
+			static const type::id id = type::id::bool_;
 		};
 
 		template <>
 		struct mapper<wchar_t>{
-			static const object::id_type id = object::id_type::wchar;
+			static const type::id id = type::id::wchar;
 		};
 
 		template <>
 		struct mapper<char>{
-			static const object::id_type id = object::id_type::char_;
+			static const type::id id = type::id::char_;
 		};
 
 		template <>
 		struct mapper<unsigned char>{
-			static const object::id_type id = object::id_type::uchar;
+			static const type::id id = type::id::uchar;
 		};
 
 		template <>
 		struct mapper<short>{
-			static const object::id_type id = object::id_type::short_;
+			static const type::id id = type::id::short_;
 		};
 
 		template <>
 		struct mapper<unsigned short>{
-			static const object::id_type id = object::id_type::ushort;
+			static const type::id id = type::id::ushort;
 		};
 
 		template <>
 		struct mapper<int>{
-			static const object::id_type id = object::id_type::int_;
+			static const type::id id = type::id::int_;
 		};
 
 		template <>
 		struct mapper<unsigned int>{
-			static const object::id_type id = object::id_type::uint;
+			static const type::id id = type::id::uint;
 		};
 
 		template <>
 		struct mapper<long>{
-			static const object::id_type id = object::id_type::long_;
+			static const type::id id = type::id::long_;
 		};
 
 		template <>
 		struct mapper<unsigned long>{
-			static const object::id_type id = object::id_type::ulong;
+			static const type::id id = type::id::ulong;
 		};
 
 		template <>
 		struct mapper<long long>{
-			static const object::id_type id = object::id_type::llong;
+			static const type::id id = type::id::llong;
 		};
 
 		template <>
 		struct mapper<unsigned long long>{
-			static const object::id_type id = object::id_type::ullong;
+			static const type::id id = type::id::ullong;
 		};
 
 		template <>
 		struct mapper<float>{
-			static const object::id_type id = object::id_type::float_;
+			static const type::id id = type::id::float_;
 		};
 
 		template <>
 		struct mapper<double>{
-			static const object::id_type id = object::id_type::double_;
+			static const type::id id = type::id::double_;
 		};
 
 		template <>
 		struct mapper<long double>{
-			static const object::id_type id = object::id_type::ldouble;
+			static const type::id id = type::id::ldouble;
 		};
 
 		template <>
 		struct mapper<const char *>{
-			static const object::id_type id = object::id_type::string_;
+			static const type::id id = type::id::string_;
 		};
 
 		template <>
 		struct mapper<char *>{
-			static const object::id_type id = object::id_type::string_;
+			static const type::id id = type::id::string_;
 		};
 
 		template <>
 		struct mapper<const wchar_t *>{
-			static const object::id_type id = object::id_type::wstring_;
+			static const type::id id = type::id::wstring_;
 		};
 
 		template <>
 		struct mapper<wchar_t *>{
-			static const object::id_type id = object::id_type::wstring_;
+			static const type::id id = type::id::wstring_;
 		};
 
 		struct static_mapper{
-			static object::ptr_type map(object::id_type id);
+			static object::ptr_type map(type::id id);
 		};
 	}
 }

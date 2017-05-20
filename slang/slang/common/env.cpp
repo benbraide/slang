@@ -42,12 +42,11 @@ void slang::common::env::bootstrap_(){
 	storage::temp::address_table = &address_table;
 
 	for (auto id = type_id_type::auto_; id < type_id_type::enum_; SLANG_INCREMENT_ENUM2(id))
-		type_list[id] = std::make_shared<type::object>(id);//Primitive types
+		type_list[id] = std::make_shared<type::primitive>(id);//Primitive types
 
 	type_ptr_type ptr;
 	auto key = type_id_type::wchar;
 
-	type_list[type_id_type::nan] = std::make_shared<type::modified>(type_list[type_id_type::int_], type_attribute_type::nan);
 	for (auto id = type_id_type::wstring_; id <= type_id_type::string_; SLANG_INCREMENT_ENUM2(id)){
 		ptr = std::make_shared<type::pointer>(type_list[key]);
 		type_list[id] = std::make_shared<type::modified>(ptr, type_attribute_type::const_);

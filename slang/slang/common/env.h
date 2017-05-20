@@ -9,6 +9,7 @@
 #include "../address/address_table.h"
 
 #include "../type/type_mapper.h"
+#include "../type/primitive_type.h"
 #include "../type/modified_type.h"
 #include "../type/pointer_type.h"
 
