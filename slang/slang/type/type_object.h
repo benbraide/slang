@@ -66,6 +66,8 @@ namespace slang{
 				type_,
 				node_,
 				storage_,
+				compile_t,
+				runtime_t,
 				enum_,
 				union_,
 				struct_,

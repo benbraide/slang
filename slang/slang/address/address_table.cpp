@@ -175,6 +175,9 @@ void slang::address::table::copy(uint64_type destination, uint64_type source){
 		return;
 	}
 
+	if (SLANG_IS(destination_entry->attributes, attribute_type::is_string))//Deallocate linked memory
+		deallocate_(*reinterpret_cast<uint64_type *>(destination_entry->ptr));
+
 	if (source_entry->size < destination_entry->size){//Copy bytes and zero rest
 		std::strncpy(destination_entry->ptr, source_entry->ptr, source_entry->size);
 		std::memset(destination_entry->ptr + source_entry->size, 0, destination_entry->size - source_entry->size);
@@ -240,8 +243,11 @@ bool slang::address::table::deallocate_(uint64_type value, bool merge){
 	if (merge)//Add to available list
 		merge_available_(value, entry->second.actual_size);
 
-	if (entry->second.ptr != nullptr)
+	if (entry->second.ptr != nullptr){
+		if (SLANG_IS(entry->second.attributes, attribute_type::is_string))//Deallocate linked memory
+			deallocate_(*reinterpret_cast<uint64_type *>(entry->second.ptr));
 		delete[] entry->second.ptr;
+	}
 	
 	head_list_.erase(entry);
 	watchers_.erase(value);
@@ -477,8 +483,10 @@ void slang::address::table::write_(uint64_type value, const char *source, uint_t
 	uint_type available_size = 0u, ptr_index = 0u;
 	watcher *watcher = nullptr;
 
+	bool unlinked;
 	while (size > 0u){
 		if (available_size == 0u){//Get next block
+			unlinked = false;
 			if ((entry = (entry == nullptr) ? get_head_(value) : find_(value)) != nullptr){
 				ptr_index = static_cast<uint_type>(value - entry->value);
 				available_size = (entry->actual_size - ptr_index);
@@ -490,6 +498,11 @@ void slang::address::table::write_(uint64_type value, const char *source, uint_t
 		if (SLANG_IS(entry->attributes, attribute_type::write_protect)){//Block is write protected
 			//#TODO: Throw exception
 			break;
+		}
+
+		if (!unlinked && SLANG_IS(entry->attributes, attribute_type::is_string)){//Deallocate linked memory
+			deallocate_(*reinterpret_cast<uint64_type *>(entry->ptr));
+			unlinked = true;
 		}
 
 		if (is_array){

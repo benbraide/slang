@@ -40,9 +40,9 @@ namespace slang{
 				return add(*head, type::static_mapper::map(type::mapper<value_type>::id));
 			}
 
-			entry *add(const char *value);
+			entry *add(const char *value, size_type size = 0u);
 
-			entry *add(const wchar_t *value);
+			entry *add(const wchar_t *value, size_type size = 0u);
 
 			entry *add(std::nullptr_t);
 

@@ -1,5 +1,9 @@
 #include "env.h"
 
+slang::utilities::thread_pool slang::common::env::thread_pool(9, 18);
+
+thread_local slang::common::error slang::common::env::exception;
+
 slang::address::table slang::common::env::address_table;
 
 slang::storage::named slang::common::env::global_storage("");
@@ -9,6 +13,10 @@ slang::storage::temp slang::common::env::local_temp_storage;
 thread_local slang::storage::temp *slang::common::env::temp_storage;
 
 slang::common::env::type_list_type slang::common::env::type_list;
+
+slang::common::output_writer_interface *slang::common::env::out_writer;
+
+slang::common::output_writer_interface *slang::common::env::error_writer;
 
 slang::storage::entry *slang::common::env::indeterminate;
 

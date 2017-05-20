@@ -3,6 +3,9 @@
 #ifndef SLANG_ENV_H
 #define SLANG_ENV_H
 
+#include "error.h"
+#include "output_writer_interface.h"
+
 #include "../address/address_table.h"
 
 #include "../type/type_mapper.h"
@@ -11,6 +14,8 @@
 
 #include "../storage/named_storage.h"
 #include "../storage/temp_storage.h"
+
+#include "../utilities/thread_pool.h"
 
 namespace slang{
 	namespace common{
@@ -22,12 +27,18 @@ namespace slang{
 
 			typedef std::unordered_map<type_id_type, type_ptr_type> type_list_type;
 
+			static utilities::thread_pool thread_pool;
+			static thread_local error exception;
+
 			static address::table address_table;
 			static storage::named global_storage;
 
 			static storage::temp local_temp_storage;
 			static thread_local storage::temp *temp_storage;
 			static type_list_type type_list;
+
+			static output_writer_interface *out_writer;
+			static output_writer_interface *error_writer;
 
 			static storage::entry *indeterminate;
 			static storage::entry *false_;
