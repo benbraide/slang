@@ -1,7 +1,22 @@
 #include "stdafx.h"
 #include "CppUnitTest.h"
 
+#include "../slang/common/error.cpp"
+#include "../slang/common/env.cpp"
+
 #include "../slang/address/address_table.cpp"
+#include "../slang/utilities/thread_pool.cpp"
+
+#include "../slang/storage/storage_entry.cpp"
+#include "../slang/storage/storage_object.cpp"
+#include "../slang/storage/named_storage.cpp"
+#include "../slang/storage/temp_storage.cpp"
+
+#include "../slang/type/type_mapper.cpp"
+#include "../slang/type/type_object.cpp"
+#include "../slang/type/primitive_type.cpp"
+#include "../slang/type/pointer_type.cpp"
+#include "../slang/type/modified_type.cpp"
 
 namespace Microsoft{
 	namespace VisualStudio{

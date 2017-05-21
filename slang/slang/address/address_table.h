@@ -61,7 +61,6 @@ namespace slang{
 
 			template <typename dependency_type, typename... arg_types>
 			void set_dependency(uint64_type value, arg_types &&... args){
-				exclusive_lock_type guard(lock_);
 				set_dependency(value, std::make_shared<dependency_type>(std::forward<arg_types>(args)...));
 			}
 
@@ -123,13 +122,9 @@ namespace slang{
 				return entry;
 			}
 
-			head *allocate_scalar_cstr(const char *value, uint_type size = 0u){
-				return allocate_scalar(value, (size == 0u) ? static_cast<uint_type>(std::strlen(value) + 1) : size);
-			}
+			head *allocate_scalar_cstr(const char *value, uint_type size = 0u);
 
-			head *allocate_scalar_wcstr(const wchar_t *value, uint_type size = 0u){
-				return allocate_scalar(value, (size == 0u) ? static_cast<uint_type>(std::wcslen(value) + 1) : size);
-			}
+			head *allocate_scalar_wcstr(const wchar_t *value, uint_type size = 0u);
 
 			head *reallocate(uint64_type value, uint_type size);
 
@@ -164,15 +159,31 @@ namespace slang{
 
 			template <typename value_type>
 			void write_numeric(uint64_type destination, value_type source){
-				shared_lock_type guard(lock_);
-				write_numeric_(destination, source);
+				if (!is_locked_()){
+					set_locked_state_(true);
+					shared_lock_type guard(lock_);
+
+					write_numeric_(destination, source);
+					set_locked_state_(false);
+				}
+				else//Already locked
+					write_numeric_(destination, source);
 			}
 
 			void read(uint64_type value, char *buffer, uint_type size) const;
 
 			template <typename value_type>
 			value_type read(uint64_type value) const{
-				shared_lock_type guard(lock_);
+				if (!is_locked_()){
+					set_locked_state_(true);
+					shared_lock_type guard(lock_);
+
+					auto result = read_<value_type>(value);
+					set_locked_state_(false);
+
+					return result;
+				}
+
 				return read_<value_type>(value);
 			}
 
@@ -180,18 +191,39 @@ namespace slang{
 
 			template <typename value_type>
 			value_type convert_numeric(uint64_type value) const{
-				shared_lock_type guard(lock_);
+				if (!is_locked_()){
+					set_locked_state_(true);
+					shared_lock_type guard(lock_);
+
+					auto result = convert_numeric_<value_type>(value);
+					set_locked_state_(false);
+
+					return result;
+				}
+
 				return convert_numeric_<value_type>(value);
 			}
 
 		private:
 			friend class slang_test::address_table_test;
 
-			bool deallocate_(uint64_type value, bool merge = true);
+			void on_thread_entry_();
+
+			void on_thread_exit_();
+
+			void capture_tls_(uint64_type value);
+
+			watcher *watch_(uint64_type value, watcher_ptr_type watcher);
+
+			dependency *get_dependency_(uint64_type value) const;
+
+			bool deallocate_(uint64_type value, bool merge = true, bool ignore_tls = false);
 
 			head *allocate_(uint_type size, uint64_type value = 0ull);
 
 			head *allocate_contiguous_(uint_type count, uint_type size);
+
+			head *reallocate_(uint64_type value, uint_type size);
 
 			head *shrink_(head &head, uint_type size);
 
@@ -207,14 +239,20 @@ namespace slang{
 
 			void copy_(uint64_type destination, uint64_type source, uint_type size);
 
+			void copy_(uint64_type destination, uint64_type source);
+
 			void write_(uint64_type value, const char *source, uint_type size, bool is_array);
 
 			template <typename value_type>
 			void write_numeric_(uint64_type destination, value_type source){
 				auto destination_entry = find_(destination);
 				if (destination_entry == nullptr){
-					//#TODO: Throw exception
+					throw_("Memory write access violation.");
+					return;
 				}
+
+				auto is_indirect = SLANG_IS_ANY(destination_entry->attributes, attribute_type::is_string | attribute_type::indirect);
+				uint64_type linked_value = (is_indirect ? *reinterpret_cast<uint64_type *>(destination_entry->ptr) : 0u);
 
 				if (!SLANG_IS(destination_entry->attributes, attribute_type::is_float)){
 					switch (destination_entry->size){
@@ -231,7 +269,8 @@ namespace slang{
 						*reinterpret_cast<__int64 *>(destination_entry->ptr) = static_cast<__int64>(source);
 						break;
 					default:
-						break;
+						throw_("Failed to write numeric - invalid memory layout.");
+						return;
 					}
 				}
 				else{//Floating point
@@ -243,11 +282,13 @@ namespace slang{
 						*reinterpret_cast<long double *>(destination_entry->ptr) = static_cast<long double>(source);
 						break;
 					default:
-						break;
+						throw_("Failed to write numeric - invalid memory layout.");
+						return;
 					}
 				}
 
-				//#TODO: Throw exception
+				if (is_indirect)//Deallocate linked memory
+					deallocate_(linked_value, true, true);
 			}
 
 			void read_(uint64_type value, char *buffer, uint_type size) const;
@@ -303,6 +344,18 @@ namespace slang{
 			void merge_available_(uint64_type value, uint_type size);
 
 			uint64_type get_available_(uint_type size, uint64_type match = 0ull);
+
+			void throw_(const char *err) const;
+
+			template <typename value_type>
+			value_type throw_and_return_(const char *err) const{
+				throw_(err);
+				return value_type();
+			}
+
+			bool is_locked_() const;
+
+			void set_locked_state_(bool is_locked) const;
 
 			static thread_local head_list_type tls_;
 

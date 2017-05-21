@@ -1,6 +1,11 @@
 #include "address_watcher.h"
+#include "../common/env.h"
 
-slang::address::watcher::~watcher() = default;
+slang::address::watcher::~watcher(){
+	lock_.lock();
+	callback_list_.clear();
+	lock_.unlock();
+}
 
 slang::address::watcher::uint64_type slang::address::watcher::add(callback_type callback, uint64_type id){
 	exclusive_lock_type guard(lock_);
@@ -18,7 +23,9 @@ void slang::address::watcher::remove(uint64_type id){
 }
 
 void slang::address::watcher::on_change(uint64_type value){
-	shared_lock_type guard(lock_);
-	for (auto &entry : callback_list_)
-		entry.second(value);//#TODO: Execute in a different thread
+	common::env::thread_pool.add([this, value]{
+		shared_lock_type guard(lock_);
+		for (auto &entry : callback_list_)
+			entry.second(value);
+	}, utilities::thread_pool::option::parallel);
 }

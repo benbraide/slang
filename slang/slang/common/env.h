@@ -28,8 +28,21 @@ namespace slang{
 
 			typedef std::unordered_map<type_id_type, type_ptr_type> type_list_type;
 
+			enum class runtime_state : unsigned int{
+				nil							= (0 << 0x0000),
+				error_enabled				= (1 << 0x0000),
+				address_table_locked		= (1 << 0x0001),
+			};
+
+			struct runtime_info{
+				runtime_state state;
+			};
+
+			static thread_local runtime_info runtime;
+			static bool exiting;
+
 			static utilities::thread_pool thread_pool;
-			static thread_local error exception;
+			static thread_local error error;
 
 			static address::table address_table;
 			static storage::named global_storage;
@@ -50,6 +63,8 @@ namespace slang{
 
 			static void bootstrap();
 
+			static void tear_down();
+
 			static type::object::ptr_type map_type(type::object::id_type id);
 
 			template <typename value_type>
@@ -62,6 +77,8 @@ namespace slang{
 
 			static std::once_flag once_flag_;
 		};
+
+		SLANG_MAKE_OPERATORS(env::runtime_state);
 	}
 }
 

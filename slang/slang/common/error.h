@@ -34,11 +34,17 @@ namespace slang{
 
 			void set(const char *value, size_type size);
 
-			void set(const std::string &value, const index_type &index);
+			void set(const std::string &value, const index_type &index, bool is_runtime = false);
 
-			template <typename value_type, typename... arg_types>
-			value_type set_and_return(arg_types &&... args){
-				set(std::forward<arg_types>(args)...);
+			template <typename value_type>
+			value_type set_and_return(const char *value, bool is_runtime = false){
+				set(value, is_runtime);
+				return value_type();
+			}
+
+			template <typename value_type>
+			value_type set_and_return(const std::string &value, const index_type &index, bool is_runtime = false){
+				set(value, index, is_runtime);
 				return value_type();
 			}
 

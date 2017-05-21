@@ -1,8 +1,12 @@
 #include "env.h"
 
+thread_local slang::common::env::runtime_info slang::common::env::runtime{};
+
+bool slang::common::env::exiting = false;
+
 slang::utilities::thread_pool slang::common::env::thread_pool(9, 18);
 
-thread_local slang::common::error slang::common::env::exception;
+thread_local slang::common::error slang::common::env::error;
 
 slang::address::table slang::common::env::address_table;
 
@@ -32,6 +36,10 @@ void slang::common::env::bootstrap(){
 	std::call_once(once_flag_, &env::bootstrap_);
 }
 
+void slang::common::env::tear_down(){
+	exiting = true;
+}
+
 slang::type::object::ptr_type slang::common::env::map_type(type::object::id_type id){
 	auto entry = type_list.find(id);
 	return (entry == type_list.end()) ? nullptr : entry->second;
@@ -39,8 +47,9 @@ slang::type::object::ptr_type slang::common::env::map_type(type::object::id_type
 
 void slang::common::env::bootstrap_(){
 	temp_storage = nullptr;
-	storage::temp::address_table = &address_table;
+	runtime.state = runtime_state::error_enabled;
 
+	storage::temp::address_table = &address_table;
 	for (auto id = type_id_type::auto_; id < type_id_type::enum_; SLANG_INCREMENT_ENUM2(id))
 		type_list[id] = std::make_shared<type::primitive>(id);//Primitive types
 

@@ -3,6 +3,7 @@
 
 slang::lexer::source_object::source_object(ptr_type begin, ptr_type end){
 	marker_ = marker_info{ begin, begin, end };
+	index_ = index_type{ 1, 1 };
 	last_index_ = index_type{};
 }
 
@@ -41,9 +42,8 @@ slang::lexer::source_object::token_ptr_type slang::lexer::source_object::next(in
 
 				return value;
 			}
-
-			//#TODO: Throw exception
-			return nullptr;
+			
+			return common::env::error.set_and_return<nullptr_t>("Invalid character encountered.", index_);
 		}
 
 		if (match_info.key == token_id::new_line)
@@ -66,8 +66,7 @@ slang::lexer::source_object::token_ptr_type slang::lexer::source_object::next(in
 				return value;
 			}
 
-			//#TODO: Throw exception
-			return nullptr;
+			return common::env::error.set_and_return<nullptr_t>("Invalid token encountered.", index_);
 		}
 
 		if (!SLANG_IS(options, option::no_halt) && source_info.halt != nullptr){//Check for halt
@@ -177,8 +176,8 @@ slang::lexer::source_object::token_ptr_type slang::lexer::source_object::from_ca
 			if (SLANG_IS(options, option::no_throw))
 				return value;
 
-			//#TODO: Throw exception
-			return nullptr;
+			count = 0;
+			return common::env::error.set_and_return<nullptr_t>("Invalid token encountered.", value->index);
 		}
 
 		if (!SLANG_IS(options, option::no_halt) && source_info.halt != nullptr){//Check for halt

@@ -8,11 +8,13 @@ slang::storage::object::object(object &parent)
 	: parent_(&parent){}
 
 slang::storage::object::~object(){
-	value_type *value;
-	while (!order_list_.empty()){
-		if ((value = order_list_.begin()->second)->is_storage())
-			value->storage(false)->parent_ = parent_;//Move parent
-		remove(*order_list_.begin()->first);
+	if (!common::env::exiting){//Perform clean up
+		value_type *value;
+		while (!order_list_.empty()){
+			if ((value = order_list_.begin()->second)->is_storage())
+				value->storage(false)->parent_ = parent_;//Move parent
+			remove(*order_list_.begin()->first);
+		}
 	}
 }
 

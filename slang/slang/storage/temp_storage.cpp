@@ -12,11 +12,13 @@ slang::storage::temp::temp()
 }
 
 slang::storage::temp::~temp(){
-	if (common::env::temp_storage == this)//Restore previous
-		common::env::temp_storage = previous_temp_;
+	if (!common::env::exiting){//Perform clean up
+		if (common::env::temp_storage == this)//Restore previous
+			common::env::temp_storage = previous_temp_;
 
-	for (auto &entry : value_list_)
-		clean_(entry);
+		for (auto &entry : value_list_)
+			clean_(entry);
+	}
 }
 
 slang::storage::entry *slang::storage::temp::add(size_type size, type_ptr_type type){
@@ -87,6 +89,6 @@ void slang::storage::temp::clean_(value_type &value){
 		return;
 
 	auto head = value.object()->address_head();
-	if (head != nullptr)//Free memory
+	if (head != nullptr && head->value != 0u)//Free memory
 		common::env::address_table.deallocate(head->value);
 }

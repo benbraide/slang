@@ -6,6 +6,9 @@ slang::common::error::~error(){
 }
 
 void slang::common::error::set(storage_entry_type *object){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	clear();
 	auto head = object->address_head();
 	if (head != nullptr)//Increment reference count
@@ -15,6 +18,9 @@ void slang::common::error::set(storage_entry_type *object){
 }
 
 void slang::common::error::set(type type, storage_entry_type *object){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	if (object != nullptr)
 		set(object);
 
@@ -22,12 +28,19 @@ void slang::common::error::set(type type, storage_entry_type *object){
 }
 
 void slang::common::error::set(const char *value, bool is_runtime){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	auto entry = common::env::temp_storage->add(value);
 	if (entry == nullptr)
 		return;
 
-	auto type = common::env::map_type(is_runtime ? type_id_type::runtime_t : type_id_type::compile_t);
-	storage_entry_type entry_copy(entry->owner(), entry->address_head(), type);
+	if (!is_runtime){//Return string object
+		set(entry);
+		return;
+	}
+
+	storage_entry_type entry_copy(entry->owner(), entry->address_head(), common::env::map_type(type_id_type::runtime_t));
 	set(&entry_copy);
 }
 
@@ -35,17 +48,26 @@ void slang::common::error::set(const char *value, size_type size){
 	set(common::env::temp_storage->add(value, size));
 }
 
-void slang::common::error::set(const std::string &value, const index_type &index){
+void slang::common::error::set(const std::string &value, const index_type &index, bool is_runtime){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	auto index_string = ("line " + std::to_string(index.line) + ", col " + std::to_string(index.column));
-	set(std::string("Exception thrown at " + index_string + ": " + value).c_str());
+	set(std::string("Exception thrown at " + index_string + ": " + value).c_str(), is_runtime);
 }
 
 void slang::common::error::warn(const char *value){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	if (common::env::error_writer != nullptr)
 		common::env::error_writer->write(value);
 }
 
 void slang::common::error::suppress(){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	if (object_.address_head() != nullptr && type_ == type::nil)
 		type_ = type::suppressed;
 }
@@ -56,6 +78,9 @@ void slang::common::error::unsuppress(){
 }
 
 void slang::common::error::clear(){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	auto head = object_.address_head();
 	if (head != nullptr){//Decrement reference count
 		common::env::address_table.deallocate(head->value);
@@ -66,6 +91,9 @@ void slang::common::error::clear(){
 }
 
 void slang::common::error::dump(){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+		return;
+
 	if (common::env::error_writer == nullptr)
 		return;
 

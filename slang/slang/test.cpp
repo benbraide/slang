@@ -11,5 +11,6 @@ int main(){
 	lr.match(m.c_str(), m.c_str() + m.size(), mi);
 	lr.match(mi.end, m.c_str() + m.size(), mi);
 
+	slang::common::env::tear_down();
 	return 0;
 }
