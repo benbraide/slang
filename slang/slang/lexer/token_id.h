@@ -122,6 +122,8 @@ namespace slang{
 			bitwise_or,
 			bitwise_xor,
 			bitwise_and,
+			variant_or,
+			variant_and,
 			like,
 			equality,
 			explicit_equality,
