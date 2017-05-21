@@ -261,6 +261,10 @@ bool slang::type::object::is_array() const{
 	return is(id_type::array_);
 }
 
+bool slang::type::object::is_strong_array() const{
+	return false;
+}
+
 bool slang::type::object::is_static_array() const{
 	return (is_array() && !is_dynamic());
 }

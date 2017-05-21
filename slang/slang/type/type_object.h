@@ -133,6 +133,8 @@ namespace slang{
 
 			virtual bool is_array() const;
 
+			virtual bool is_strong_array() const;
+
 			virtual bool is_static_array() const;
 
 			virtual bool is_function() const;
