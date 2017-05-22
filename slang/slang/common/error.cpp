@@ -40,7 +40,7 @@ void slang::common::error::set(const char *value, bool is_runtime){
 		return;
 	}
 
-	storage_entry_type entry_copy(entry->owner(), entry->address_head(), common::env::map_type(type_id_type::runtime_t));
+	storage_entry_type entry_copy(entry->owner(), entry->address_value(), common::env::map_type(type_id_type::runtime_t));
 	set(&entry_copy);
 }
 

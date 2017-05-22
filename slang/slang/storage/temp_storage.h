@@ -13,8 +13,14 @@ namespace slang{
 		class temp{
 		public:
 			typedef object::value_type value_type;
-			typedef address::table::attribute_type attribute_type;
+			typedef address::table::uint64_type uint64_type;
 
+			typedef type::object type_object_type;
+			typedef type::object::ptr_type type_ptr_type;
+			typedef type::object::attribute type_attribute_type;
+			typedef type::id type_id_type;
+
+			typedef entry::attribute_type attribute_type;
 			typedef entry::address_head_type address_head_type;
 			typedef entry::type_ptr_type type_ptr_type;
 
@@ -25,11 +31,11 @@ namespace slang{
 
 			virtual ~temp();
 
-			entry *add(size_type size, type_ptr_type type);
+			entry *add(size_type size, type_ptr_type type, attribute_type attributes = attribute_type::nil);
 
-			entry *add(address_head_type &head, type_ptr_type type);
+			entry *wrap(uint64_type value, type_ptr_type type, attribute_type attributes = attribute_type::nil);
 
-			entry *add(const entry &entry);
+			entry *wrap(const entry &entry);
 
 			template <typename value_type>
 			entry *add(value_type value){
@@ -37,25 +43,30 @@ namespace slang{
 				if (head == nullptr)//Failed to allocate memory
 					return nullptr;
 
-				return add(*head, type::static_mapper::map(type::mapper<value_type>::id));
+				return wrap(head->value, type::static_mapper::map(type::mapper<value_type>::id), attribute_type::block_aligned);
 			}
 
 			entry *add(const char *value, size_type size = 0u);
 
 			entry *add(const wchar_t *value, size_type size = 0u);
 
+			entry *add(type_object_type &value);
+
 			entry *add(std::nullptr_t);
+
+			entry *add_pointer(entry &value, type_ptr_type type);
 
 			entry *nan();
 
 			static address::table *address_table;
 
 		protected:
+			entry *add_string_(address_head_type &head, type_id_type id);
+
 			void clean_(value_type &value);
 
 			temp *previous_temp_;
 			value_list_type value_list_;
-			address_head_type nullptr_;
 		};
 	}
 }

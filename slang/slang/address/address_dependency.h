@@ -8,8 +8,6 @@ namespace slang{
 		class dependency{
 		public:
 			virtual ~dependency() = default;
-
-			virtual void no_address_deallocation() = 0;
 		};
 	}
 }

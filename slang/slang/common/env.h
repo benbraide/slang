@@ -7,11 +7,13 @@
 #include "output_writer_interface.h"
 
 #include "../address/address_table.h"
+#include "../address/generic_address_dependency.h"
 
 #include "../type/type_mapper.h"
 #include "../type/primitive_type.h"
 #include "../type/modified_type.h"
 #include "../type/pointer_type.h"
+#include "../type/static_array_type.h"
 
 #include "../storage/named_storage.h"
 #include "../storage/temp_storage.h"

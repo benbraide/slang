@@ -4,11 +4,6 @@
 slang::storage::temp::temp()
 	: previous_temp_(common::env::temp_storage){
 	common::env::temp_storage = this;
-	nullptr_ = address_head_type{
-		1u,
-		0ull,
-		0u,
-	};;
 }
 
 slang::storage::temp::~temp(){
@@ -21,19 +16,19 @@ slang::storage::temp::~temp(){
 	}
 }
 
-slang::storage::entry *slang::storage::temp::add(size_type size, type_ptr_type type){
+slang::storage::entry *slang::storage::temp::add(size_type size, type_ptr_type type, attribute_type attributes){
 	auto head = address_table->allocate(size);
 	if (head == nullptr)//Failed to allocate memory
 		return nullptr;
 
-	return add(*head, type);
+	return wrap(head->value, type, attributes | attribute_type::block_aligned);
 }
 
-slang::storage::entry *slang::storage::temp::add(address_head_type &head, type_ptr_type type){
-	return value_list_.emplace(value_list_.end(), entry(nullptr, &head, type))->object();
+slang::storage::entry *slang::storage::temp::wrap(uint64_type value, type_ptr_type type, attribute_type attributes){
+	return value_list_.emplace(value_list_.end(), entry(nullptr, value, type, attributes))->object();
 }
 
-slang::storage::entry *slang::storage::temp::add(const entry &entry){
+slang::storage::entry *slang::storage::temp::wrap(const entry &entry){
 	return value_list_.emplace(value_list_.end(), entry)->object();
 }
 
@@ -42,14 +37,7 @@ slang::storage::entry *slang::storage::temp::add(const char *value, size_type si
 	if (head == nullptr)//Failed to allocate memory
 		return nullptr;
 
-	auto ptr_head = address_table->allocate_scalar(head->value);
-	if (ptr_head == nullptr){//Failed to allocate memory
-		address_table->deallocate(head->value);
-		return nullptr;
-	}
-
-	SLANG_SET(ptr_head->attributes, address::table::attribute_type::is_string);
-	return add(*ptr_head, common::env::type_list[type::object::id_type::string_]);
+	return add_string_(*head, type_id_type::string_);
 }
 
 slang::storage::entry *slang::storage::temp::add(const wchar_t *value, size_type size){
@@ -57,18 +45,36 @@ slang::storage::entry *slang::storage::temp::add(const wchar_t *value, size_type
 	if (head == nullptr)//Failed to allocate memory
 		return nullptr;
 
-	auto ptr_head = address_table->allocate_scalar(head->value);
-	if (ptr_head == nullptr){//Failed to allocate memory
-		address_table->deallocate(head->value);
-		return nullptr;
-	}
+	return add_string_(*head, type_id_type::wstring_);
+}
 
-	SLANG_SET(ptr_head->attributes, address::table::attribute_type::is_string);
-	return add(*ptr_head, common::env::type_list[type::object::id_type::wstring_]);
+slang::storage::entry *slang::storage::temp::add(type_object_type &value){
+	auto head = address_table->allocate_scalar(*reinterpret_cast<uint64_type *>(&value));
+	if (head == nullptr)//Failed to allocate memory
+		return nullptr;
+
+	address_table->set_dependency<address::generic_dependency<type_ptr_type>>(head->value, value.reflect());
+	return wrap(head->value, common::env::type_list[type::object::id_type::type_], attribute_type::block_aligned);
 }
 
 slang::storage::entry *slang::storage::temp::add(std::nullptr_t){
-	return add(nullptr_, common::env::type_list[type::object::id_type::nullptr_]);
+	return wrap(0u, common::env::type_list[type::object::id_type::nullptr_], attribute_type::block_aligned);
+}
+
+slang::storage::entry *slang::storage::temp::add_pointer(entry &value, type_ptr_type type){
+	auto head = address_table->allocate_scalar(value.address_head()->value);
+	if (head == nullptr)//Failed to allocate memory
+		return nullptr;
+
+	auto new_type = type->remove_modified()->reflect();
+	auto attributes = attribute_type::nil;
+
+	if (value.is(attribute_type::const_) || type->is_const()){//pointer to const value
+		new_type = std::make_shared<type::modified>(new_type, type_attribute_type::const_);
+		attributes = attribute_type::const_pointer;
+	}
+
+	return wrap(head->value, std::make_shared<type::pointer>(new_type), attributes | attribute_type::block_aligned);
 }
 
 slang::storage::entry *slang::storage::temp::nan(){
@@ -76,13 +82,22 @@ slang::storage::entry *slang::storage::temp::nan(){
 	if (head == nullptr)//Failed to allocate memory
 		return nullptr;
 
-	SLANG_REMOVE(head->attributes, attribute_type::uninitialized);
-	SLANG_SET(head->attributes, attribute_type::is_nan | attribute_type::write_protect);
-
-	return add(*head, common::env::type_list[type::object::id_type::int_]);
+	SLANG_SET(head->attributes, address::table::attribute_type::write_protect);
+	return wrap(head->value, common::env::type_list[type::object::id_type::nan], attribute_type::nan_ | attribute_type::block_aligned);
 }
 
 slang::address::table *slang::storage::temp::address_table = nullptr;
+
+slang::storage::entry *slang::storage::temp::add_string_(address_head_type &head, type_id_type id){
+	auto ptr_head = address_table->allocate_scalar(head.value);
+	if (ptr_head == nullptr){//Failed to allocate memory
+		address_table->deallocate(head.value);
+		return nullptr;
+	}
+
+	SLANG_SET(ptr_head->attributes, address::table::attribute_type::is_string);
+	return wrap(ptr_head->value, common::env::type_list[id], attribute_type::block_aligned);
+}
 
 void slang::storage::temp::clean_(value_type &value){
 	if (!value.is_object())
@@ -90,5 +105,5 @@ void slang::storage::temp::clean_(value_type &value){
 
 	auto head = value.object()->address_head();
 	if (head != nullptr && head->value != 0u)//Free memory
-		common::env::address_table.deallocate(head->value);
+		address_table->deallocate(head->value);
 }

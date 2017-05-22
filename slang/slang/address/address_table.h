@@ -17,6 +17,8 @@
 #include "address_range.h"
 #include "address_watcher.h"
 
+#include "../type/bool_type.h"
+
 namespace slang_test{
 	class address_table_test;
 }
@@ -83,7 +85,7 @@ namespace slang{
 
 			template <typename value_type>
 			head *allocate(){
-				auto entry = allocate(sizeof(value_type));
+				auto entry = allocate(std::is_same<value_type, bool>::value ? sizeof(type::bool_type) : sizeof(value_type));
 				if (std::is_floating_point<value_type>::value && entry != nullptr)
 					SLANG_SET(entry->attributes, attribute_type::is_float);
 
@@ -103,6 +105,8 @@ namespace slang{
 
 				return entry;
 			}
+
+			head *allocate_scalar(bool value);
 
 			head *allocate_scalar(const char *value);
 
@@ -139,8 +143,6 @@ namespace slang{
 			bool contains(uint64_type value) const;
 
 			void copy(uint64_type destination, uint64_type source, uint_type size);
-
-			void copy(uint64_type destination, uint64_type source);
 
 			void set(uint64_type value, char c, uint_type size);
 
@@ -238,8 +240,6 @@ namespace slang{
 			watcher *find_watcher_(uint64_type value) const;
 
 			void copy_(uint64_type destination, uint64_type source, uint_type size);
-
-			void copy_(uint64_type destination, uint64_type source);
 
 			void write_(uint64_type value, const char *source, uint_type size, bool is_array);
 

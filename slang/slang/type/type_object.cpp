@@ -7,6 +7,10 @@ slang::type::object::ptr_type slang::type::object::reflect(){
 	return shared_from_this();
 }
 
+slang::type::object::driver_object_type *slang::type::object::driver() const{
+	return nullptr;
+}
+
 slang::type::object *slang::type::object::underlying_type() const{
 	return nullptr;
 }

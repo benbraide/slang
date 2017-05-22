@@ -158,6 +158,10 @@ slang::address::head *slang::address::table::allocate(uint_type count, uint_type
 	return allocate_contiguous_(count, size);
 }
 
+slang::address::head *slang::address::table::allocate_scalar(bool value){
+	return allocate_scalar(value ? type::bool_type::true_ : type::bool_type::false_);
+}
+
 slang::address::head *slang::address::table::allocate_scalar(const char *value){
 	return allocate_scalar_cstr(value);
 }
@@ -268,18 +272,6 @@ void slang::address::table::copy(uint64_type destination, uint64_type source, ui
 	}
 	else//Locked
 		copy_(destination, source, size);
-}
-
-void slang::address::table::copy(uint64_type destination, uint64_type source){
-	if (!is_locked_()){
-		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
-		shared_lock_type guard(lock_);
-
-		copy_(destination, source);
-		SLANG_REMOVE(common::env::runtime.state, common::env::runtime_state::address_table_locked);
-	}
-	else//Locked
-		copy_(destination, source);
 }
 
 void slang::address::table::set(uint64_type value, char c, uint_type size){
@@ -463,7 +455,7 @@ slang::address::head *slang::address::table::allocate_(uint_type size, uint64_ty
 		return nullptr;
 	}
 
-	return &(head_list_[value] = head{ 1u, value, size, actual_size, attribute_type::uninitialized, ptr });
+	return &(head_list_[value] = head{ 1u, value, size, actual_size, attribute_type::nil, ptr });
 }
 
 slang::address::head *slang::address::table::allocate_contiguous_(uint_type count, uint_type size){
@@ -657,58 +649,23 @@ void slang::address::table::copy_(uint64_type destination, uint64_type source, u
 		throw_("Memory access violation.");
 }
 
-void slang::address::table::copy_(uint64_type destination, uint64_type source){
-	auto destination_entry = find_(destination);
-	if (destination_entry == nullptr){
-		common::env::error.set("Failed to copy memory - invalid destination address.", true);
-		return;
-	}
-
-	auto source_entry = find_(source);
-	if (source_entry == nullptr){
-		common::env::error.set("Failed to copy memory - invalid source address.", true);
-		return;
-	}
-
-	if (destination_entry->value < protected_ || source_entry->value < protected_){
-		throw_("Memory access violation.");
-		return;
-	}
-
-	if (SLANG_IS_ANY(destination_entry->attributes, attribute_type::is_string | attribute_type::indirect))
-		deallocate_(*reinterpret_cast<uint64_type *>(destination_entry->ptr), true, true);//Deallocate linked memory
-
-	if (source_entry->size < destination_entry->size){//Copy bytes and zero rest
-		std::strncpy(destination_entry->ptr, source_entry->ptr, source_entry->size);
-		std::memset(destination_entry->ptr + source_entry->size, 0, destination_entry->size - source_entry->size);
-	}
-	else//Direct copy
-		std::strncpy(destination_entry->ptr, source_entry->ptr, destination_entry->size);
-
-	auto watcher = find_watcher_(destination_entry->value);
-	if (watcher != nullptr)
-		watcher->on_change(destination_entry->value);//Alert watcher
-}
-
 void slang::address::table::write_(uint64_type value, const char *source, uint_type size, bool is_array){
 	if (size == 0u)
 		return;
 
 	head *entry = nullptr;
-	uint_type available_size = 0u, ptr_index = 0u;
+	uint_type available_size = 0u, min_size = 0u, ptr_index = 0u;
 	watcher *watcher = nullptr;
 
 	bool unlinked;
 	while (size > 0u){
-		if (available_size == 0u){//Get next block
-			unlinked = false;
-			if ((entry = (entry == nullptr) ? get_head_(value) : find_(value)) != nullptr){
-				ptr_index = static_cast<uint_type>(value - entry->value);
-				available_size = (entry->actual_size - ptr_index);
-			}
-			else//No next block
-				break;
+		unlinked = false;
+		if ((entry = (entry == nullptr) ? get_head_(value) : find_(value)) != nullptr){//Get next block
+			ptr_index = static_cast<uint_type>(value - entry->value);
+			available_size = (entry->actual_size - ptr_index);
 		}
+		else//No next block
+			break;
 
 		if (SLANG_IS(entry->attributes, attribute_type::write_protect)){//Block is write protected
 			common::env::error.set("Memory write access violation.", true);
@@ -720,25 +677,15 @@ void slang::address::table::write_(uint64_type value, const char *source, uint_t
 			unlinked = true;
 		}
 
-		if (is_array){
-			if (available_size < size){
-				std::strncpy(entry->ptr + ptr_index, source, available_size);
-				source += available_size;
-				value += available_size;
-				size -= available_size;
-				available_size = 0u;
-			}
-			else{//Copy applicable
-				std::strncpy(entry->ptr + ptr_index, source, size);
-				size = 0u;
-			}
-		}
-		else{//Single byte
-			*(entry->ptr + ptr_index) = *source;//Write byte
-			--available_size;
-			--size;
-			++ptr_index;
-		}
+		min_size = (available_size < size) ? available_size : size;
+		if (is_array)
+			std::strncpy(entry->ptr + ptr_index, source, min_size);
+		else//Set applicable
+			std::memset(entry->ptr, *source, min_size);
+
+		source += min_size;
+		value += min_size;
+		size -= min_size;
 
 		if ((watcher = find_watcher_(entry->value)) != nullptr)
 			watcher->on_change(entry->value);//Alert watcher
@@ -753,19 +700,22 @@ void slang::address::table::read_(uint64_type value, char *buffer, uint_type siz
 		return;
 
 	head *entry = nullptr;
-	uint_type available_size = 0u, ptr_index = 0u;
+	uint_type available_size = 0u, min_size = 0u, ptr_index = 0u;
 
-	for (; size > 0u; --size, --available_size, ++value, ++ptr_index, ++buffer){
-		if (available_size == 0u){//Get next block
-			if ((entry = (entry == nullptr) ? get_head_(value) : find_(value)) != nullptr){
-				ptr_index = static_cast<uint_type>(value - entry->value);
-				available_size = (entry->actual_size - ptr_index);
-			}
-			else//No next block
-				break;
+	while (size > 0u){
+		if ((entry = (entry == nullptr) ? get_head_(value) : find_(value)) != nullptr){//Get next block
+			ptr_index = static_cast<uint_type>(value - entry->value);
+			available_size = (entry->actual_size - ptr_index);
 		}
+		else//No next block
+			break;
 
-		*buffer = *(entry->ptr + ptr_index);//Read byte
+		min_size = (available_size < size) ? available_size : size;
+		std::strncpy(buffer, entry->ptr, min_size);//Read block
+
+		buffer += min_size;
+		value += min_size;
+		size -= min_size;
 	}
 
 	if (size > 0u && !common::env::error.has())

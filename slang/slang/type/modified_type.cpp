@@ -70,16 +70,16 @@ int slang::type::modified::score(const storage::entry &entry) const{
 
 	auto is_const = this->is_const();
 	if (is_ref()){
-		if (entry.owner() == nullptr && !SLANG_IS(head->attributes, address::table::attribute_type::lval)){//rvalue
+		if (entry.owner() == nullptr && !entry.is_lval()){//rvalue
 			if (!is_const)//Constant reference is required for rvalue
 				return SLANG_MIN_TYPE_SCORE;
 		}
 
-		if (!is_const && SLANG_IS(head->attributes, address::table::attribute_type::constant))
+		if (!is_const && entry.is_const())
 			return SLANG_MIN_TYPE_SCORE;//Constness mismatch
 	}
 
-	if (!is_const && SLANG_IS(head->attributes, address::table::attribute_type::constant) && is_rval_ref())
+	if (!is_const && entry.is_const() && is_rval_ref())
 		return SLANG_MIN_TYPE_SCORE;//Constness mismatch
 
 	auto value = underlying_type_->score(entry.type()->remove_modified());

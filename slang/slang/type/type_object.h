@@ -19,9 +19,15 @@ namespace slang{
 		class entry;
 	}
 
+	namespace driver{
+		class object;
+	}
+
 	namespace type{
 		class object : public std::enable_shared_from_this<object>{
 		public:
+			typedef driver::object driver_object_type;
+
 			typedef type::bool_type bool_type;
 			typedef type::id id_type;
 
@@ -50,6 +56,8 @@ namespace slang{
 			virtual ~object() = default;
 
 			virtual ptr_type reflect();
+
+			virtual driver_object_type *driver() const;
 
 			virtual object *underlying_type() const;
 
