@@ -3,13 +3,16 @@
 
 int main(){
 	slang::common::env::bootstrap();
+	slang::storage::temp tmp;
 
-	slang::lexer::lang_rules lr;
-	slang::lexer::lang_rules::match_info mi;
-	
-	std::string m("##ben");
-	lr.match(m.c_str(), m.c_str() + m.size(), mi);
-	lr.match(mi.end, m.c_str() + m.size(), mi);
+	auto val = tmp.add(4.5f), val2 = tmp.add(108);
+
+	slang::driver::object::get_driver(*val)->echo(*val);
+	slang::driver::object::get_driver(*val2)->echo(*val2);
+
+	slang::common::binary_operator_info boi{ slang::lexer::operator_id::plus };
+	auto val3 = slang::driver::object::get_driver(*val)->evaluate(*val, boi, *val2);
+	slang::driver::object::get_driver(*val3)->echo(*val3);
 
 	slang::common::env::tear_down();
 	return 0;

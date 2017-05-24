@@ -13,6 +13,8 @@ namespace slang{
 
 			virtual ~array_type();
 
+			virtual driver_object_type *driver() const override;
+
 			virtual object *underlying_type() const override;
 
 			virtual object *remove_array() const override;

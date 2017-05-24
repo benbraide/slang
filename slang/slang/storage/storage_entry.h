@@ -50,6 +50,8 @@ namespace slang{
 
 			address_head_type *address_head() const;
 
+			address_head_type *cached_address_head() const;
+
 			type_ptr_type type() const;
 
 			attribute_type attributes() const;

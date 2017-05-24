@@ -8,6 +8,10 @@ slang::type::array_type::array_type(ptr_type underlying_type)
 
 slang::type::array_type::~array_type() = default;
 
+slang::type::object::driver_object_type *slang::type::array_type::driver() const{
+	return nullptr;
+}
+
 slang::type::object *slang::type::array_type::underlying_type() const{
 	return underlying_type_.get();
 }

@@ -2,7 +2,8 @@
 #include "../common/env.h"
 
 slang::common::error::~error(){
-	clear();
+	if (!common::env::exiting)
+		clear();
 }
 
 void slang::common::error::set(storage_entry_type *object){
@@ -28,7 +29,7 @@ void slang::common::error::set(type type, storage_entry_type *object){
 }
 
 void slang::common::error::set(const char *value, bool is_runtime){
-	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled) || has())
 		return;
 
 	auto entry = common::env::temp_storage->add(value);
@@ -115,12 +116,10 @@ void slang::common::error::dump(){
 	}
 
 	auto head = object_.address_head();
-	if (head == nullptr)
-		return;
-
-	++head->ref_count;
-	//#TODO: Echo object
-	common::env::address_table.deallocate(head->value);
+	if (head != nullptr){//Echo object
+		driver::object::get_driver(object_)->echo(object_, *common::env::error_writer, true);
+		common::env::address_table.deallocate(head->value);
+	}
 }
 
 slang::common::error::storage_entry_type *slang::common::error::get(){

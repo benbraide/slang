@@ -48,6 +48,10 @@ slang::storage::entry::address_head_type *slang::storage::entry::address_head() 
 	return &address_head_;
 }
 
+slang::storage::entry::address_head_type *slang::storage::entry::cached_address_head() const{
+	return &address_head_;
+}
+
 slang::storage::entry::type_ptr_type slang::storage::entry::type() const{
 	return type_;
 }

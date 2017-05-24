@@ -8,6 +8,10 @@ slang::type::pointer::pointer(ptr_type underlying_type)
 
 slang::type::pointer::~pointer() = default;
 
+slang::type::object::driver_object_type *slang::type::pointer::driver() const{
+	return nullptr;
+}
+
 slang::type::object *slang::type::pointer::underlying_type() const{
 	return underlying_type_.get();
 }

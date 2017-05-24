@@ -322,18 +322,6 @@ void slang::address::table::read(uint64_type value, char *buffer, uint_type size
 		read_(value, buffer, size);
 }
 
-void slang::address::table::convert_numeric(uint64_type destination, uint64_type source) const{
-	if (!is_locked_()){
-		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
-		shared_lock_type guard(lock_);
-
-		convert_numeric_(destination, source);
-		SLANG_REMOVE(common::env::runtime.state, common::env::runtime_state::address_table_locked);
-	}
-	else//Locked
-		convert_numeric_(destination, source);
-}
-
 void slang::address::table::on_thread_entry_(){
 	common::env::runtime.state = common::env::runtime_state::error_enabled;
 	for (auto &entry : tls_captures_){//Initialize thread local storage
@@ -720,47 +708,6 @@ void slang::address::table::read_(uint64_type value, char *buffer, uint_type siz
 
 	if (size > 0u && !common::env::error.has())
 		common::env::error.set("Memory write access violation.", true);
-}
-
-void slang::address::table::convert_numeric_(uint64_type destination, uint64_type source) const{
-	auto destination_entry = find_(destination);
-	if (destination_entry == nullptr && !common::env::error.has()){
-		common::env::error.set("Memory write access violation.", true);
-		return;
-	}
-
-	if (!SLANG_IS(destination_entry->attributes, attribute_type::is_float)){
-		switch (destination_entry->size){
-		case sizeof(__int8) :
-			*reinterpret_cast<__int8 *>(destination_entry->ptr) = convert_numeric_<__int8>(source);
-			break;
-		case sizeof(__int16):
-			*reinterpret_cast<__int16 *>(destination_entry->ptr) = convert_numeric_<__int16>(source);
-			break;
-		case sizeof(__int32):
-			*reinterpret_cast<__int32 *>(destination_entry->ptr) = convert_numeric_<__int32>(source);
-			break;
-		case sizeof(__int64):
-			*reinterpret_cast<__int64 *>(destination_entry->ptr) = convert_numeric_<__int64>(source);
-			break;
-		default:
-			break;
-		}
-	}
-	else{//Floating point
-		switch (destination_entry->size){
-		case sizeof(float):
-			*reinterpret_cast<float *>(destination_entry->ptr) = convert_numeric_<float>(source);
-			break;
-		case sizeof(long double):
-			*reinterpret_cast<long double *>(destination_entry->ptr) = convert_numeric_<long double>(source);
-			break;
-		default:
-			break;
-		}
-	}
-
-	common::env::error.set("Failed to convert numeric - invalid memory layout.", true);
 }
 
 void slang::address::table::merge_available_(uint64_type value, uint_type size){

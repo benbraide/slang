@@ -18,9 +18,13 @@ thread_local slang::storage::temp *slang::common::env::temp_storage;
 
 slang::common::env::type_list_type slang::common::env::type_list;
 
-slang::common::output_writer_interface *slang::common::env::out_writer;
+slang::common::env::output_writer_type slang::common::env::default_output_writer(std::cout, std::wcout);
 
-slang::common::output_writer_interface *slang::common::env::error_writer;
+slang::common::env::output_writer_type slang::common::env::default_error_writer(std::cerr, std::wcerr);
+
+slang::common::output_writer_interface *slang::common::env::out_writer = &default_output_writer;
+
+slang::common::output_writer_interface *slang::common::env::error_writer = &default_error_writer;
 
 slang::storage::entry *slang::common::env::indeterminate;
 
@@ -31,6 +35,8 @@ slang::storage::entry *slang::common::env::true_;
 slang::storage::entry *slang::common::env::nullptr_;
 
 slang::storage::entry *slang::common::env::nan;
+
+slang::driver::numeric slang::common::env::numeric_driver;
 
 void slang::common::env::bootstrap(){
 	std::call_once(once_flag_, &env::bootstrap_);

@@ -7,6 +7,10 @@ slang::type::static_array::static_array(ptr_type underlying_type, size_type coun
 
 slang::type::static_array::~static_array() = default;
 
+slang::type::object::driver_object_type *slang::type::static_array::driver() const{
+	return nullptr;
+}
+
 std::string slang::type::static_array::print() const{
 	return (underlying_type_->print() + "[" + std::to_string(count_) + "]");
 }

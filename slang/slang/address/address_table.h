@@ -85,11 +85,7 @@ namespace slang{
 
 			template <typename value_type>
 			head *allocate(){
-				auto entry = allocate(std::is_same<value_type, bool>::value ? sizeof(type::bool_type) : sizeof(value_type));
-				if (std::is_floating_point<value_type>::value && entry != nullptr)
-					SLANG_SET(entry->attributes, attribute_type::is_float);
-
-				return entry;
+				return allocate(std::is_same<value_type, bool>::value ? sizeof(type::bool_type) : sizeof(value_type));
 			}
 
 			template <typename value_type>
@@ -97,9 +93,6 @@ namespace slang{
 				auto entry = allocate(sizeof(value_type));
 				if (entry != nullptr){//Successful allocation
 					entry->attributes = attribute_type::write_protect;
-					if (std::is_floating_point<std::decay_t<value_type>>::value)
-						SLANG_SET(entry->attributes, attribute_type::is_float);
-
 					*reinterpret_cast<value_type *>(entry->ptr) = value;
 				}
 
@@ -160,16 +153,16 @@ namespace slang{
 			}
 
 			template <typename value_type>
-			void write_numeric(uint64_type destination, value_type source){
+			void write_numeric(uint64_type destination, value_type source, bool is_floating_point){
 				if (!is_locked_()){
 					set_locked_state_(true);
 					shared_lock_type guard(lock_);
 
-					write_numeric_(destination, source);
+					write_numeric_(destination, source, is_floating_point);
 					set_locked_state_(false);
 				}
 				else//Already locked
-					write_numeric_(destination, source);
+					write_numeric_(destination, source, is_floating_point);
 			}
 
 			void read(uint64_type value, char *buffer, uint_type size) const;
@@ -189,21 +182,24 @@ namespace slang{
 				return read_<value_type>(value);
 			}
 
-			void convert_numeric(uint64_type destination, uint64_type source) const;
-
 			template <typename value_type>
-			value_type convert_numeric(uint64_type value) const{
+			value_type convert_numeric(uint64_type value, bool is_floating_point) const{
 				if (!is_locked_()){
 					set_locked_state_(true);
 					shared_lock_type guard(lock_);
 
-					auto result = convert_numeric_<value_type>(value);
+					auto result = convert_numeric_<value_type>(value, is_floating_point);
 					set_locked_state_(false);
 
 					return result;
 				}
 
-				return convert_numeric_<value_type>(value);
+				return convert_numeric_<value_type>(value, is_floating_point);
+			}
+
+			template <typename value_type>
+			void convert_numeric(uint64_type value, bool is_floating_point, value_type &buffer) const{
+				buffer = convert_numeric<value_type>(value, is_floating_point);
 			}
 
 		private:
@@ -244,51 +240,51 @@ namespace slang{
 			void write_(uint64_type value, const char *source, uint_type size, bool is_array);
 
 			template <typename value_type>
-			void write_numeric_(uint64_type destination, value_type source){
-				auto destination_entry = find_(destination);
+			void write_numeric_(uint64_type destination, value_type source, bool is_floating_point){
+				auto destination_entry = get_head_(destination);
 				if (destination_entry == nullptr){
 					throw_("Memory write access violation.");
 					return;
 				}
 
-				auto is_indirect = SLANG_IS_ANY(destination_entry->attributes, attribute_type::is_string | attribute_type::indirect);
-				uint64_type linked_value = (is_indirect ? *reinterpret_cast<uint64_type *>(destination_entry->ptr) : 0u);
-
-				if (!SLANG_IS(destination_entry->attributes, attribute_type::is_float)){
+				if (!is_floating_point){
 					switch (destination_entry->size){
 					case sizeof(__int8):
-						*reinterpret_cast<__int8 *>(destination_entry->ptr) = static_cast<__int8>(source);
+						write_numeric_<value_type, __int8>(destination, source);
 						break;
 					case sizeof(__int16):
-						*reinterpret_cast<__int16 *>(destination_entry->ptr) = static_cast<__int16>(source);
+						write_numeric_<value_type, __int16>(destination, source);
 						break;
 					case sizeof(__int32):
-						*reinterpret_cast<__int32 *>(destination_entry->ptr) = static_cast<__int32>(source);
+						write_numeric_<value_type, __int32>(destination, source);
 						break;
 					case sizeof(__int64):
-						*reinterpret_cast<__int64 *>(destination_entry->ptr) = static_cast<__int64>(source);
+						write_numeric_<value_type, __int64>(destination, source);
 						break;
 					default:
 						throw_("Failed to write numeric - invalid memory layout.");
-						return;
+						break;
 					}
 				}
 				else{//Floating point
 					switch (destination_entry->size){
 					case sizeof(float):
-						*reinterpret_cast<float *>(destination_entry->ptr) = static_cast<float>(source);
+						write_numeric_<value_type, float>(destination, source);
 						break;
 					case sizeof(long double):
-						*reinterpret_cast<long double *>(destination_entry->ptr) = static_cast<long double>(source);
+						write_numeric_<value_type, long double>(destination, source);
 						break;
 					default:
 						throw_("Failed to write numeric - invalid memory layout.");
-						return;
+						break;
 					}
 				}
+			}
 
-				if (is_indirect)//Deallocate linked memory
-					deallocate_(linked_value, true, true);
+			template <typename value_type, typename target_type>
+			void write_numeric_(uint64_type destination, value_type source){
+				auto value = static_cast<target_type>(source);
+				write_(destination, reinterpret_cast<char *>(&value), true);
 			}
 
 			void read_(uint64_type value, char *buffer, uint_type size) const;
@@ -305,24 +301,22 @@ namespace slang{
 				return out_value;
 			}
 
-			void convert_numeric_(uint64_type destination, uint64_type source) const;
-
 			template <typename value_type>
-			value_type convert_numeric_(uint64_type value) const{
-				auto entry = find_(value);
+			value_type convert_numeric_(uint64_type value, bool is_floating_point) const{
+				auto entry = get_head_(value);
 				if (entry == nullptr)//Read value
 					return read_<value_type>(value);
 
-				if (!SLANG_IS(entry->attributes, attribute_type::is_float)){
+				if (!is_floating_point){
 					switch (entry->size){
 					case sizeof(__int8):
-						return static_cast<value_type>(*reinterpret_cast<__int8 *>(entry->ptr));
+						return convert_numeric_<value_type, __int8>(value);
 					case sizeof(__int16):
-						return static_cast<value_type>(*reinterpret_cast<__int16 *>(entry->ptr));
+						return convert_numeric_<value_type, __int16>(value);
 					case sizeof(__int32):
-						return static_cast<value_type>(*reinterpret_cast<__int32 *>(entry->ptr));
+						return convert_numeric_<value_type, __int32>(value);
 					case sizeof(__int64):
-						return static_cast<value_type>(*reinterpret_cast<__int64 *>(entry->ptr));
+						return convert_numeric_<value_type, __int64>(value);
 					default:
 						break;
 					}
@@ -330,15 +324,20 @@ namespace slang{
 				else{//Floating point
 					switch (entry->size){
 					case sizeof(float):
-						return static_cast<value_type>(*reinterpret_cast<float *>(entry->ptr));
+						return convert_numeric_<value_type, float>(value);
 					case sizeof(long double):
-						return static_cast<value_type>(*reinterpret_cast<long double *>(entry->ptr));
+						return convert_numeric_<value_type, long double>(value);
 					default:
 						break;
 					}
 				}
 
 				return read_<value_type>(value);
+			}
+
+			template <typename value_type, typename target_type>
+			value_type convert_numeric_(uint64_type value) const{
+				return static_cast<value_type>(read_<target_type>(value));
 			}
 
 			void merge_available_(uint64_type value, uint_type size);

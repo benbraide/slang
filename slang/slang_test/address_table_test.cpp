@@ -260,15 +260,15 @@ namespace slang_test{
 			slang::address::table table;
 			auto value = table.allocate_scalar(108)->value;
 
-			Assert::AreEqual(table.convert_numeric<__int32>(value), 108);
-			Assert::AreEqual(table.convert_numeric<__int64>(value), 108ll);
-			Assert::AreEqual(table.convert_numeric<float>(value), 108.0f);
+			Assert::AreEqual(table.convert_numeric<__int32>(value, false), 108);
+			Assert::AreEqual(table.convert_numeric<__int64>(value, false), 108ll);
+			Assert::AreEqual(table.convert_numeric<float>(value, false), 108.0f);
 
 			value = table.allocate_scalar(4.5l)->value;
 
-			Assert::AreEqual(table.convert_numeric<__int32>(value), 4);
-			Assert::AreEqual(table.convert_numeric<__int64>(value), 4ll);
-			Assert::AreEqual(table.convert_numeric<float>(value), 4.5f);
+			Assert::AreEqual(table.convert_numeric<__int32>(value, true), 4);
+			Assert::AreEqual(table.convert_numeric<__int64>(value, true), 4ll);
+			Assert::AreEqual(table.convert_numeric<float>(value, true), 4.5f);
 		}
 	};
 }

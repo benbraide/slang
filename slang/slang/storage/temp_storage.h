@@ -56,6 +56,8 @@ namespace slang{
 
 			entry *add_pointer(entry &value, type_ptr_type type);
 
+			entry *add_pointer(uint64_type value, type_ptr_type type);
+
 			entry *nan();
 
 			static address::table *address_table;

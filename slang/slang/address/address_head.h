@@ -20,8 +20,7 @@ namespace slang{
 				is_string		= (1 << 0x0002),
 				is_function		= (1 << 0x0003),
 				write_protect	= (1 << 0x0004),
-				is_float		= (1 << 0x0005),
-				tls				= (1 << 0x0006),
+				tls				= (1 << 0x0005),
 			};
 
 			uint_type ref_count;

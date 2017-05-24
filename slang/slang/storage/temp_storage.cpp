@@ -77,6 +77,14 @@ slang::storage::entry *slang::storage::temp::add_pointer(entry &value, type_ptr_
 	return wrap(head->value, std::make_shared<type::pointer>(new_type), attributes | attribute_type::block_aligned);
 }
 
+slang::storage::entry *slang::storage::temp::add_pointer(uint64_type value, type_ptr_type type){
+	auto head = address_table->allocate_scalar(value);
+	if (head == nullptr)//Failed to allocate memory
+		return nullptr;
+
+	return wrap(head->value, type, attribute_type::block_aligned);
+}
+
 slang::storage::entry *slang::storage::temp::nan(){
 	auto head = address_table->allocate(0u);
 	if (head == nullptr)//Failed to allocate memory

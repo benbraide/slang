@@ -8,6 +8,12 @@ slang::type::modified::modified(ptr_type underlying_type, attribute attributes)
 
 slang::type::modified::~modified() = default;
 
+slang::type::object::driver_object_type *slang::type::modified::driver() const{
+	if (is_ref())
+		return nullptr;
+	return underlying_type_->driver();
+}
+
 slang::type::object *slang::type::modified::underlying_type() const{
 	return underlying_type_.get();
 }

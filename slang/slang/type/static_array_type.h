@@ -13,6 +13,8 @@ namespace slang{
 
 			virtual ~static_array();
 
+			virtual driver_object_type *driver() const override;
+
 			virtual std::string print() const override;
 
 			virtual size_type size() const override;

@@ -13,6 +13,8 @@ namespace slang{
 
 			virtual ~primitive();
 
+			virtual driver_object_type *driver() const override;
+
 			virtual const std::string &name() const override;
 
 			virtual size_type size() const override;

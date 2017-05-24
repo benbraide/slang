@@ -1,5 +1,5 @@
 #include "primitive_type.h"
-#include "../address/address_table.h"
+#include "../common/env.h"
 
 slang::type::primitive::primitive(id_type id)
 	: id_(id){
@@ -114,7 +114,7 @@ slang::type::primitive::primitive(id_type id)
 		break;
 	case id_type::nan:
 		name_ = "nan_t";
-		size_ = static_cast<size_type>(1);
+		size_ = static_cast<size_type>(sizeof(address::table::uint64_type));
 		break;
 	default:
 		size_ = static_cast<size_type>(0);
@@ -123,6 +123,52 @@ slang::type::primitive::primitive(id_type id)
 }
 
 slang::type::primitive::~primitive(){}
+
+slang::type::object::driver_object_type *slang::type::primitive::driver() const{
+	switch (id_){
+	case id_type::any:
+		return nullptr;
+	case id_type::auto_:
+	case id_type::bool_:
+		return nullptr;
+	case id_type::bit:
+		return nullptr;
+	case id_type::byte:
+		return nullptr;
+	case id_type::wchar:
+		return nullptr;
+	case id_type::char_:
+	case id_type::uchar:
+	case id_type::short_:
+	case id_type::ushort:
+	case id_type::int_:
+	case id_type::uint:
+	case id_type::long_:
+	case id_type::ulong:
+	case id_type::llong:
+	case id_type::ullong:
+	case id_type::float_:
+	case id_type::double_:
+	case id_type::ldouble:
+	case id_type::nan:
+		return &common::env::numeric_driver;
+	case id_type::nullptr_:
+	case id_type::pointer:
+	case id_type::array_:
+	case id_type::function:
+		return nullptr;
+	case id_type::type_:
+		return nullptr;
+	case id_type::node_:
+		return nullptr;
+	case id_type::storage_:
+		return nullptr;
+	default:
+		break;
+	}
+
+	return nullptr;
+}
 
 const std::string &slang::type::primitive::name() const{
 	return name_;
