@@ -38,6 +38,8 @@ slang::storage::entry *slang::common::env::nan;
 
 slang::driver::numeric slang::common::env::numeric_driver;
 
+slang::driver::pointer slang::common::env::pointer_driver;
+
 void slang::common::env::bootstrap(){
 	std::call_once(once_flag_, &env::bootstrap_);
 }

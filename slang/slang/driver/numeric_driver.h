@@ -12,9 +12,6 @@ namespace slang{
 	namespace driver{
 		class numeric : public object{
 		public:
-			using object::echo;
-			using object::convert;
-
 			virtual ~numeric();
 
 			virtual entry_type *cast(entry_type &entry, type::object &type, cast_type options = cast_type::nil) override;

@@ -31,6 +31,8 @@ namespace slang{
 
 			virtual id_type id() const override;
 
+			virtual bool is_dynamic() const override;
+
 			virtual bool is_pointer() const override;
 
 		protected:

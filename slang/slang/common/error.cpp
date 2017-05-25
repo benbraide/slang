@@ -82,6 +82,7 @@ void slang::common::error::clear(){
 	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
 		return;
 
+	SLANG_REMOVE(common::env::runtime.state, common::env::runtime_state::error_enabled);
 	auto head = object_.address_head();
 	if (head != nullptr){//Decrement reference count
 		common::env::address_table.deallocate(head->value);
@@ -89,6 +90,7 @@ void slang::common::error::clear(){
 	}
 
 	type_ = type::nil;
+	SLANG_SET(common::env::runtime.state, common::env::runtime_state::error_enabled);
 }
 
 void slang::common::error::dump(){
@@ -115,11 +117,14 @@ void slang::common::error::dump(){
 		break;
 	}
 
+	SLANG_REMOVE(common::env::runtime.state, common::env::runtime_state::error_enabled);
 	auto head = object_.address_head();
 	if (head != nullptr){//Echo object
 		driver::object::get_driver(object_)->echo(object_, *common::env::error_writer, true);
 		common::env::address_table.deallocate(head->value);
 	}
+
+	SLANG_SET(common::env::runtime.state, common::env::runtime_state::error_enabled);
 }
 
 slang::common::error::storage_entry_type *slang::common::error::get(){
@@ -127,7 +132,7 @@ slang::common::error::storage_entry_type *slang::common::error::get(){
 }
 
 bool slang::common::error::has() const{
-	return (type_ != type::suppressed && (object_.address_head() != nullptr || type_ != type::nil));
+	return (type_ != type::suppressed && (object_.address_value() != 0u || type_ != type::nil));
 }
 
 bool slang::common::error::is_error() const{

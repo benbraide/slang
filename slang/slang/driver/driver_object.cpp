@@ -133,8 +133,8 @@ std::string slang::driver::object::to_string(entry_type &entry){
 }
 
 std::wstring slang::driver::object::to_wstring(entry_type &entry){
-	auto value = convert<const char *>(entry);
-	return (value == nullptr) ? std::wstring() : std::wstring(reinterpret_cast<const wchar_t *>(value));
+	auto value = convert<const wchar_t *>(entry);
+	return (value == nullptr) ? std::wstring() : std::wstring(value);
 }
 
 void slang::driver::object::convert(entry_type &entry, type_id_type id, char *buffer){

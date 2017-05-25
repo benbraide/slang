@@ -343,43 +343,43 @@ slang::driver::object::entry_type *slang::driver::numeric::cast_(entry_type &ent
 	switch (id){
 	case type_id_type::char_:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<char>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::uchar:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<unsigned char>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::short_:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<short>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::ushort:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<unsigned short>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::int_:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<int>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::uint:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<unsigned int>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::long_:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<long>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::ulong:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<unsigned long>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::llong:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<long long>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::ullong:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<unsigned long long>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::float_:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<float>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::double_:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<double>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	case type_id_type::ldouble:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<long double>(entry.address_value(),
-			entry.type()->is_floating_point()));
+			type_of(entry)->is_floating_point()));
 	default:
 		break;
 	}

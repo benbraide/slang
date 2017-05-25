@@ -103,6 +103,14 @@ slang::type::object::id_type slang::type::modified::id() const{
 	return underlying_type_->id();
 }
 
+bool slang::type::modified::is(id_type id) const{
+	return underlying_type_->is(id);
+}
+
+bool slang::type::modified::is_dynamic() const{
+	return underlying_type_->is_dynamic();
+}
+
 bool slang::type::modified::is_modified() const{
 	return true;
 }

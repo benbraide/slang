@@ -39,6 +39,10 @@ namespace slang{
 
 			virtual id_type id() const override;
 
+			virtual bool is(id_type id) const override;
+
+			virtual bool is_dynamic() const override;
+
 			virtual bool is_modified() const override;
 
 		protected:

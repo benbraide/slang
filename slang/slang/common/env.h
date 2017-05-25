@@ -21,6 +21,7 @@
 #include "../storage/temp_storage.h"
 
 #include "../driver/numeric_driver.h"
+#include "../driver/pointer_driver.h"
 
 #include "../utilities/thread_pool.h"
 
@@ -75,6 +76,7 @@ namespace slang{
 			static storage::entry *nan;
 
 			static driver::numeric numeric_driver;
+			static driver::pointer pointer_driver;
 
 			static void bootstrap();
 

@@ -14,6 +14,13 @@ int main(){
 	auto val3 = slang::driver::object::get_driver(*val)->evaluate(*val, boi, *val2);
 	slang::driver::object::get_driver(*val3)->echo(*val3);
 
+	auto val4 = tmp.add("Hello World!"), val5 = tmp.add(L"Hello World!");
+	slang::driver::object::get_driver(*val4)->echo(*val4);
+	slang::driver::object::get_driver(*val5)->echo(*val5);
+
+	auto sv = slang::driver::object::get_driver(*val4)->to_string(*val4);
+	auto wsv = slang::driver::object::get_driver(*val5)->to_wstring(*val5);
+
 	slang::common::env::tear_down();
 	return 0;
 }

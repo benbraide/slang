@@ -30,6 +30,7 @@ namespace slang{
 			typedef storage::entry entry_type;
 			typedef entry_type::attribute_type attribute_type;
 
+			typedef address::head address_head_type;
 			typedef address::head::attribute_type address_attribute_type;
 			typedef address::head::uint64_type uint64_type;
 			typedef address::head::uint_type uint_type;

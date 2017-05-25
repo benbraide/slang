@@ -1,7 +1,5 @@
 #include "pointer_type.h"
-
-#include "../address/address_table.h"
-#include "../storage/storage_entry.h"
+#include "../common/env.h"
 
 slang::type::pointer::pointer(ptr_type underlying_type)
 	: underlying_type_(underlying_type), name_("pointer_t<" + underlying_type->name() + ">"){}
@@ -9,7 +7,7 @@ slang::type::pointer::pointer(ptr_type underlying_type)
 slang::type::pointer::~pointer() = default;
 
 slang::type::object::driver_object_type *slang::type::pointer::driver() const{
-	return nullptr;
+	return &common::env::pointer_driver;
 }
 
 slang::type::object *slang::type::pointer::underlying_type() const{
@@ -81,6 +79,10 @@ int slang::type::pointer::score(const storage::entry &entry) const{
 
 slang::type::object::id_type slang::type::pointer::id() const{
 	return id_type::pointer;
+}
+
+bool slang::type::pointer::is_dynamic() const{
+	return false;
 }
 
 bool slang::type::pointer::is_pointer() const{
