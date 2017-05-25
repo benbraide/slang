@@ -30,29 +30,8 @@ slang::type::object::size_type slang::type::pointer::size() const{
 	return static_cast<size_type>(sizeof(address::table::uint64_type));
 }
 
-int slang::type::pointer::score(const object *type) const{
+int slang::type::pointer::score(const object *type, bool is_entry, bool check_const) const{
 	auto value = object::score(type);
-	if (value != SLANG_MIN_TYPE_SCORE)
-		return value;
-
-	if (!type->is_pointer())
-		return type->is_nullptr() ? (SLANG_MAX_TYPE_SCORE - 2) : SLANG_MIN_TYPE_SCORE;
-
-	if (type->is_dynamic())
-		return (SLANG_MAX_TYPE_SCORE - 2);
-
-	auto underlying_type_value = underlying_type_->score(type->remove_pointer());
-	return (underlying_type_value >= (SLANG_MAX_TYPE_SCORE - 2)) ? underlying_type_value : SLANG_MIN_TYPE_SCORE;
-}
-
-int slang::type::pointer::score(const storage::entry &entry) const{
-	auto head = entry.address_head();
-	if (head == nullptr)
-		return score(entry.type().get());
-
-	auto type = entry.type().get();
-	auto value = object::score(type);
-
 	if (value != SLANG_MIN_TYPE_SCORE)
 		return value;
 
@@ -60,20 +39,17 @@ int slang::type::pointer::score(const storage::entry &entry) const{
 		if (type->is_nullptr())
 			return (SLANG_MAX_TYPE_SCORE - 2);
 
-		if (!type->is_array())
+		if (!is_entry || !type->is_array())
 			return SLANG_MIN_TYPE_SCORE;
 
-		if (type->is_dynamic())
-			return (SLANG_MAX_TYPE_SCORE - 2);
-
-		auto underlying_type_value = underlying_type_->score(type->remove_array());
+		auto underlying_type_value = underlying_type_->score(type->remove_array(), true, true);
 		return (underlying_type_value >= (SLANG_MAX_TYPE_SCORE - 2)) ? underlying_type_value : SLANG_MIN_TYPE_SCORE;
 	}
 
 	if (type->is_dynamic())
 		return (SLANG_MAX_TYPE_SCORE - 2);
 
-	auto underlying_type_value = underlying_type_->score(type->remove_pointer());
+	auto underlying_type_value = underlying_type_->score(type->remove_pointer(), is_entry, true);
 	return (underlying_type_value >= (SLANG_MAX_TYPE_SCORE - 2)) ? underlying_type_value : SLANG_MIN_TYPE_SCORE;
 }
 
@@ -87,4 +63,28 @@ bool slang::type::pointer::is_dynamic() const{
 
 bool slang::type::pointer::is_pointer() const{
 	return true;
+}
+
+bool slang::type::pointer::is_strong_pointer() const{
+	return true;
+}
+
+bool slang::type::pointer::is_string() const{
+	return underlying_type_->is(id_type::char_);
+}
+
+bool slang::type::pointer::is_const_string() const{
+	return (underlying_type_->is_const() && is_string());
+}
+
+bool slang::type::pointer::is_wstring() const{
+	return underlying_type_->is(id_type::wchar);
+}
+
+bool slang::type::pointer::is_const_wstring() const{
+	return (underlying_type_->is_const() && is_wstring());
+}
+
+bool slang::type::pointer::is_const_target() const{
+	return underlying_type_->is_const();
 }

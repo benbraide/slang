@@ -19,7 +19,7 @@ namespace slang{
 
 			virtual size_type size() const override;
 
-			virtual int score(const object *type) const override;
+			virtual int score(const object *type, bool is_entry = false, bool check_const = false) const override;
 
 			virtual id_type id() const override;
 

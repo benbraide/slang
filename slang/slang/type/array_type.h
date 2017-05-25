@@ -25,13 +25,15 @@ namespace slang{
 
 			virtual size_type size() const override;
 
-			virtual int score(const object *type) const override;
+			virtual int score(const object *type, bool is_entry = false, bool check_const = false) const override;
 
 			virtual id_type id() const override;
 
 			virtual bool is_array() const override;
 
 			virtual bool is_strong_array() const override;
+
+			virtual bool is_const_target() const override;
 
 		protected:
 			ptr_type underlying_type_;

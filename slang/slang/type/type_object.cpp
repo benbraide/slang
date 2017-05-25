@@ -1,7 +1,5 @@
 #include "type_object.h"
-
-#include "../address/address_table.h"
-#include "../storage/storage_entry.h"
+#include "../common/env.h"
 
 slang::type::object::ptr_type slang::type::object::reflect(){
 	return shared_from_this();
@@ -35,7 +33,7 @@ std::string slang::type::object::print() const{
 	return name();
 }
 
-int slang::type::object::score(const object *type) const{
+int slang::type::object::score(const object *type, bool is_entry, bool check_const) const{
 	if (type == this)
 		return SLANG_MAX_TYPE_SCORE;
 
@@ -49,7 +47,8 @@ int slang::type::object::score(const object *type) const{
 }
 
 int slang::type::object::score(const storage::entry &entry) const{
-	return score(entry.type().get());
+	auto &entry_ref = const_cast<storage::entry &>(entry);
+	return score(driver::object::get_driver(entry_ref)->type_of(entry_ref), true);
 }
 
 const slang::type::object *slang::type::object::match(const object *type, match_type criteria) const{
@@ -242,23 +241,23 @@ bool slang::type::object::is_pointer() const{
 }
 
 bool slang::type::object::is_strong_pointer() const{
-	return (is_pointer() && !is_dynamic());
+	return false;
 }
 
 bool slang::type::object::is_string() const{
-	return (is_strong_pointer() && remove_pointer()->is(id_type::char_));
+	return false;
 }
 
 bool slang::type::object::is_const_string() const{
-	return (is_const() && is_string());
+	return false;
 }
 
 bool slang::type::object::is_wstring() const{
-	return (is_strong_pointer() && remove_pointer()->is(id_type::wchar));
+	return false;
 }
 
 bool slang::type::object::is_const_wstring() const{
-	return (is_const() && is_wstring());
+	return false;
 }
 
 bool slang::type::object::is_array() const{
@@ -270,7 +269,7 @@ bool slang::type::object::is_strong_array() const{
 }
 
 bool slang::type::object::is_static_array() const{
-	return (is_array() && !is_dynamic());
+	return false;
 }
 
 bool slang::type::object::is_function() const{
@@ -278,7 +277,7 @@ bool slang::type::object::is_function() const{
 }
 
 bool slang::type::object::is_strong_function() const{
-	return (is_function() && !is_dynamic());
+	return false;
 }
 
 bool slang::type::object::is_nullptr() const{
@@ -299,6 +298,10 @@ bool slang::type::object::is_rval_ref() const{
 
 bool slang::type::object::is_const() const{
 	return SLANG_IS(attributes(), attribute::const_);
+}
+
+bool slang::type::object::is_const_target() const{
+	return false;
 }
 
 bool slang::type::object::is_specific() const{

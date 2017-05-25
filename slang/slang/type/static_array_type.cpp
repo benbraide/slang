@@ -27,6 +27,10 @@ bool slang::type::static_array::is_static_array() const{
 	return true;
 }
 
+bool slang::type::static_array::is_const_target() const{
+	return underlying_type_->is_const();
+}
+
 slang::type::object::size_type slang::type::static_array::count() const{
 	return count_;
 }

@@ -31,7 +31,7 @@ namespace slang{
 
 			virtual size_type size() const override;
 
-			virtual int score(const object *type) const override;
+			virtual int score(const object *type, bool is_entry = false, bool check_const = false) const override;
 
 			virtual int score(const storage::entry &entry) const override;
 
@@ -42,6 +42,24 @@ namespace slang{
 			virtual bool is(id_type id) const override;
 
 			virtual bool is_dynamic() const override;
+
+			virtual bool is_strong_pointer() const override;
+
+			virtual bool is_string() const override;
+
+			virtual bool is_const_string() const override;
+
+			virtual bool is_wstring() const override;
+
+			virtual bool is_const_wstring() const override;
+
+			virtual bool is_strong_array() const override;
+
+			virtual bool is_static_array() const override;
+
+			virtual bool is_strong_function() const override;
+
+			virtual bool is_const_target() const override;
 
 			virtual bool is_modified() const override;
 

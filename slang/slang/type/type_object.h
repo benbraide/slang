@@ -75,7 +75,7 @@ namespace slang{
 
 			virtual size_type size() const = 0;
 
-			virtual int score(const object *type) const;
+			virtual int score(const object *type, bool is_entry = false, bool check_const = false) const;
 
 			virtual int score(const storage::entry &entry) const;
 
@@ -158,6 +158,8 @@ namespace slang{
 			virtual bool is_rval_ref() const;
 
 			virtual bool is_const() const;
+
+			virtual bool is_const_target() const;
 
 			virtual bool is_specific() const;
 

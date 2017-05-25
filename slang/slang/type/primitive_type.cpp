@@ -178,8 +178,8 @@ slang::type::object::size_type slang::type::primitive::size() const{
 	return size_;
 }
 
-int slang::type::primitive::score(const object *type) const{
-	auto value = object::score(type);
+int slang::type::primitive::score(const object *type, bool is_entry, bool check_const) const{
+	auto value = object::score(type, is_entry, check_const);
 	if (value != SLANG_MIN_TYPE_SCORE)
 		return value;
 

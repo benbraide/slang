@@ -23,6 +23,8 @@ namespace slang{
 
 			virtual bool is_static_array() const override;
 
+			virtual bool is_const_target() const override;
+
 			virtual size_type count() const;
 
 		protected:

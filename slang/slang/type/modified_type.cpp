@@ -56,13 +56,14 @@ slang::type::object::size_type slang::type::modified::size() const{
 		underlying_type_->size();
 }
 
-int slang::type::modified::score(const object *type) const{
-	if (is_specific() || type->is_specific()){//Specificity must match
-		if (is_const() != type->is_const() || is_ref() != type->is_ref() || is_rval_ref() != type->is_rval_ref())
-			return SLANG_MIN_TYPE_SCORE;
-	}
+int slang::type::modified::score(const object *type, bool is_entry, bool check_const) const{
+	if (!is_entry && (is_const() != type->is_const() || is_ref() != type->is_ref() || is_rval_ref() != type->is_rval_ref()))
+		return SLANG_MIN_TYPE_SCORE;//Specificity must match
 
-	auto value = underlying_type_->score(type);
+	if (is_entry && check_const && type->is_const() && !is_const())
+		return SLANG_MIN_TYPE_SCORE;//Constness must match
+
+	auto value = underlying_type_->score(type, is_entry, check_const);
 	if (value == SLANG_MIN_TYPE_SCORE)
 		return value;
 
@@ -109,6 +110,42 @@ bool slang::type::modified::is(id_type id) const{
 
 bool slang::type::modified::is_dynamic() const{
 	return underlying_type_->is_dynamic();
+}
+
+bool slang::type::modified::is_strong_pointer() const{
+	return underlying_type_->is_strong_pointer();
+}
+
+bool slang::type::modified::is_string() const{
+	return underlying_type_->is_string();
+}
+
+bool slang::type::modified::is_const_string() const{
+	return underlying_type_->is_const_string();
+}
+
+bool slang::type::modified::is_wstring() const{
+	return underlying_type_->is_wstring();
+}
+
+bool slang::type::modified::is_const_wstring() const{
+	return underlying_type_->is_const_wstring();
+}
+
+bool slang::type::modified::is_strong_array() const{
+	return underlying_type_->is_strong_array();
+}
+
+bool slang::type::modified::is_static_array() const{
+	return underlying_type_->is_static_array();
+}
+
+bool slang::type::modified::is_strong_function() const{
+	return underlying_type_->is_strong_function();
+}
+
+bool slang::type::modified::is_const_target() const{
+	return underlying_type_->is_const_target();
 }
 
 bool slang::type::modified::is_modified() const{
