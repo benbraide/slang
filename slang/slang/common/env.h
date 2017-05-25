@@ -22,6 +22,7 @@
 
 #include "../driver/numeric_driver.h"
 #include "../driver/pointer_driver.h"
+#include "../driver/ref_driver.h"
 
 #include "../utilities/thread_pool.h"
 
@@ -77,6 +78,8 @@ namespace slang{
 
 			static driver::numeric numeric_driver;
 			static driver::pointer pointer_driver;
+			static driver::indirect indirect_driver;
+			static driver::ref ref_driver;
 
 			static void bootstrap();
 

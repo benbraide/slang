@@ -301,7 +301,7 @@ slang::driver::object::entry_type *slang::driver::numeric::assign_(entry_type &e
 	common::env::address_table.copy(head->value, driver->address_of(value), head->size);
 	entry.remove_attributes(attribute_type::nan_);
 
-	return nullptr;
+	return &entry;
 }
 
 void slang::driver::numeric::convert_(entry_type &entry, type_id_type id, char *buffer){

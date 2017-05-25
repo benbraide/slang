@@ -40,6 +40,10 @@ slang::driver::numeric slang::common::env::numeric_driver;
 
 slang::driver::pointer slang::common::env::pointer_driver;
 
+slang::driver::indirect slang::common::env::indirect_driver;
+
+slang::driver::ref slang::common::env::ref_driver;
+
 void slang::common::env::bootstrap(){
 	std::call_once(once_flag_, &env::bootstrap_);
 }

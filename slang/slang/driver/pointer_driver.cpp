@@ -173,7 +173,7 @@ slang::driver::object::entry_type *slang::driver::pointer::assign_(entry_type &e
 	auto head = entry.cached_address_head();
 	common::env::address_table.copy(head->value, driver->address_of(value), head->size);
 
-	return nullptr;
+	return &entry;
 }
 
 void slang::driver::pointer::convert_(entry_type &entry, type_id_type id, char *buffer){

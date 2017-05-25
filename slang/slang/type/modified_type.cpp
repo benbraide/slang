@@ -1,7 +1,5 @@
 #include "modified_type.h"
-
-#include "../address/address_table.h"
-#include "../storage/storage_entry.h"
+#include "../common/env.h"
 
 slang::type::modified::modified(ptr_type underlying_type, attribute attributes)
 	: underlying_type_(underlying_type), attributes_(attributes){}
@@ -10,7 +8,7 @@ slang::type::modified::~modified() = default;
 
 slang::type::object::driver_object_type *slang::type::modified::driver() const{
 	if (is_ref())
-		return nullptr;
+		return &common::env::ref_driver;
 	return underlying_type_->driver();
 }
 

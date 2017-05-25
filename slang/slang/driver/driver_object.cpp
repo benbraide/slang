@@ -261,6 +261,7 @@ slang::driver::object::entry_type *slang::driver::object::assign_(entry_type &en
 
 	auto head = entry.cached_address_head();
 	common::env::address_table.copy(head->value, driver->address_of(value), head->size);
+	entry.remove_attributes(attribute_type::uninitialized);
 
 	return &entry;
 }
