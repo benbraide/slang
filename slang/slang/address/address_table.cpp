@@ -65,6 +65,10 @@ void slang::address::table::protect(){
 	protected_ = (next_ - 1);
 }
 
+bool slang::address::table::is_protected(uint64_type value) const{
+	return (value <= protected_);
+}
+
 void slang::address::table::set_dependency(uint64_type value, dependency_ptr_type dependency){
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);

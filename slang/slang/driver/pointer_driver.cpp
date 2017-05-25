@@ -11,6 +11,21 @@ slang::driver::object::entry_type *slang::driver::pointer::cast(entry_type &entr
 	return SLANG_IS(options, cast_type::reinterpret) ? reinterpret_cast_(entry, type, options) : static_cast_(entry, type, options);
 }
 
+slang::driver::object::uint_type slang::driver::pointer::size_of(entry_type &entry){
+	auto type = type_of(entry);
+	if (type->is_string())//Return count
+		return static_cast<uint_type>(std::strlen(get_string_ptr_(entry)));
+
+	if (type->is_wstring())//Return count
+		return static_cast<uint_type>(std::wcslen(reinterpret_cast<const wchar_t *>(get_string_ptr_(entry))));
+
+	return type->size();
+}
+
+slang::driver::object::uint64_type slang::driver::pointer::pointer_target(entry_type &entry){
+	return value(entry);
+}
+
 slang::driver::object::uint64_type slang::driver::pointer::value(entry_type &entry){
 	return common::env::address_table.read<uint64_type>(entry.address_value());
 }
@@ -41,15 +56,123 @@ slang::driver::object::address_head_type slang::driver::pointer::target(entry_ty
 	return target_head_copy;
 }
 
+slang::driver::object::entry_type *slang::driver::pointer::dereference(entry_type &entry, long long offset){
+	auto target_address = value(entry);
+	if (common::env::error.has())
+		return nullptr;
+
+	auto type = type_of(entry)->remove_pointer()->reflect();
+	if (offset < 0ll)
+		target_address -= (type->size() * static_cast<uint64_type>(-offset));
+	else//Forward
+		target_address += (type->size() * static_cast<uint64_type>(offset));
+
+	if (common::env::address_table.is_protected(target_address))
+		return common::env::error.set_and_return<nullptr_t>("Memory access violation.", true);
+
+	if (entry.is_const_pointer() && !type->is_const())//Create constant type
+		type = std::make_shared<type::modified>(type->remove_modified()->reflect(), type_attribute_type::const_);
+
+	return common::env::temp_storage->wrap(target_address, type, attribute_type::lval);
+}
+
 slang::driver::object::entry_type *slang::driver::pointer::evaluate_(entry_type &entry, binary_info_type &info, entry_type &operand){
-	return nullptr;
+	auto type = type_of(entry);
+	if (type->is_string())
+		return evaluate_string_(entry, info, operand);
+
+	if (type->is_wstring())
+		return evaluate_wstring_(entry, info, operand);
+
+	auto operand_driver = get_driver(operand);
+	auto operand_type = operand_driver->type_of(operand);
+	if (operand_type->is_integral()){
+		auto value = this->value(entry);
+		if (common::env::error.has())
+			return nullptr;
+
+		switch (info.id){
+		case operator_id_type::index:
+			return dereference(entry, operand_driver->convert<long long>(operand));
+		case operator_id_type::compound_plus:
+			return evaluate_increment_(entry, true, true, operand_driver->convert<uint64_type>(operand));
+		case operator_id_type::plus:
+			return common::env::temp_storage->add_pointer(this->value(entry) + (type->remove_pointer()->size() *
+				operand_driver->convert<uint64_type>(operand)), type->reflect());
+		case operator_id_type::compound_minus:
+			return evaluate_increment_(entry, false, true, operand_driver->convert<uint64_type>(operand));
+		case operator_id_type::minus:
+			return common::env::temp_storage->add_pointer(this->value(entry) - (type->remove_pointer()->size() *
+				operand_driver->convert<uint64_type>(operand)), type->reflect());
+		default:
+			break;
+		}
+
+		return object::evaluate_(entry, info, operand);
+	}
+
+	auto linked_entry = operand_driver->linked_object(operand);
+	if (common::env::error.has())
+		return nullptr;
+
+	if (linked_entry != nullptr){
+		operand_driver = get_driver(*linked_entry);
+		operand_type = operand_driver->type_of(operand);
+	}
+	else//No linked object
+		linked_entry = &operand;
+
+	if (!operand_type->is_strong_pointer())
+		return object::evaluate_(entry, info, operand);
+
+	if (type->remove_pointer()->score(operand_type->remove_pointer(), true, false) != SLANG_MAX_TYPE_SCORE)
+		return object::evaluate_(entry, info, operand);
+
+	switch (info.id){
+	case operator_id_type::less:
+		return common::env::temp_storage->add(value(entry) < operand_driver->pointer_target(operand));
+	case operator_id_type::less_or_equal:
+		return common::env::temp_storage->add(value(entry) <= operand_driver->pointer_target(operand));
+	case operator_id_type::equality:
+		return common::env::temp_storage->add(value(entry) == operand_driver->pointer_target(operand));
+	case operator_id_type::inverse_equality:
+		return common::env::temp_storage->add(value(entry) != operand_driver->pointer_target(operand));
+	case operator_id_type::more_or_equal:
+		return common::env::temp_storage->add(value(entry) >= operand_driver->pointer_target(operand));
+	case operator_id_type::more:
+		return common::env::temp_storage->add(value(entry) > operand_driver->pointer_target(operand));
+	default:
+		break;
+	}
+
+	return object::evaluate_(entry, info, operand);
 }
 
 slang::driver::object::entry_type *slang::driver::pointer::evaluate_(entry_type &entry, unary_info_type &info){
-	return nullptr;
+	switch (info.id){
+	case operator_id_type::decrement:
+		return evaluate_increment_(entry, false, info.is_left);
+	case operator_id_type::increment:
+		return evaluate_increment_(entry, true, info.is_left);
+	default:
+		break;
+	}
+
+	if (info.is_left && info.id == lexer::operator_id::times)
+		return dereference(entry);
+
+	return object::evaluate_(entry, info);
 }
 
 slang::driver::object::entry_type *slang::driver::pointer::assign_(entry_type &entry, entry_type &value){
+	auto driver = get_driver(value);
+	auto compatible_value = driver->cast(value, *type_of(entry));
+	if (compatible_value == nullptr || common::env::error.has())
+		return common::env::error.set_and_return<nullptr_t>("Object is not compatible with target type", true);
+
+	auto head = entry.cached_address_head();
+	common::env::address_table.copy(head->value, driver->address_of(value), head->size);
+
 	return nullptr;
 }
 
@@ -63,12 +186,13 @@ void slang::driver::pointer::convert_(entry_type &entry, type_id_type id, char *
 }
 
 void slang::driver::pointer::echo_(entry_type &entry, writer_type &out, bool no_throw){
-	if (type_of(entry)->is_string()){//Echo string
+	auto type = type_of(entry);
+	if (type->is_string()){//Echo string
 		out.write(get_string_ptr_(entry));
 		return;
 	}
 
-	if (type_of(entry)->is_wstring()){//Echo narrow string
+	if (type->is_wstring()){//Echo narrow string
 		out.write(reinterpret_cast<wchar_t *>(get_string_ptr_(entry)));
 		return;
 	}
@@ -77,7 +201,7 @@ void slang::driver::pointer::echo_(entry_type &entry, writer_type &out, bool no_
 	if (value == 0u)
 		return object::echo_(entry, out, no_throw);
 
-	entry_type target_entry(nullptr, value, type_of(entry)->remove_pointer()->reflect());
+	entry_type target_entry(nullptr, value, type->remove_pointer()->reflect());
 	if (common::env::error.has())
 		return;
 
@@ -210,6 +334,80 @@ slang::driver::object::entry_type *slang::driver::pointer::reinterpret_cast_(ent
 	}
 
 	return type.is_numeric() ? cast_(entry, type.id()) : nullptr;
+}
+
+slang::driver::object::entry_type *slang::driver::pointer::evaluate_increment_(entry_type &entry, bool increment, bool lval, uint64_type mult){
+	if (!entry.is_lval())
+		return common::env::error.set_and_return<nullptr_t>("Operator requires an lvalue.", true);
+
+	if (entry.is_const())
+		return common::env::error.set_and_return<nullptr_t>("Cannot modify a constant object.", true);
+
+	auto type = type_of(entry);
+	auto value = this->value(entry), previous_value = value;
+	if (increment){
+		if ((value += (type->remove_pointer()->size() * mult)) == previous_value)
+			++value;
+	}
+	else if ((value -= (type->remove_pointer()->size() * mult)) == previous_value)//Decrement
+		--value;
+
+	common::env::address_table.write(entry.address_value(), value);
+	return lval ? &entry : common::env::temp_storage->add_pointer(previous_value, type->reflect());
+}
+
+slang::driver::object::entry_type *slang::driver::pointer::evaluate_string_(entry_type &entry, binary_info_type &info, entry_type &operand){
+	auto rhs = get_driver(operand)->to_string(operand);
+	if (common::env::error.has())
+		return nullptr;
+
+	switch (info.id){
+	case operator_id_type::plus:
+		return common::env::temp_storage->add((get_string_ptr_(entry) + rhs).c_str());
+	case operator_id_type::less:
+		return common::env::temp_storage->add(std::string_view(get_string_ptr_(entry)) < rhs);
+	case operator_id_type::less_or_equal:
+		return common::env::temp_storage->add(std::string_view(get_string_ptr_(entry)) <= rhs);
+	case operator_id_type::equality:
+		return common::env::temp_storage->add(std::string_view(get_string_ptr_(entry)) == rhs);
+	case operator_id_type::inverse_equality:
+		return common::env::temp_storage->add(std::string_view(get_string_ptr_(entry)) != rhs);
+	case operator_id_type::more_or_equal:
+		return common::env::temp_storage->add(std::string_view(get_string_ptr_(entry)) >= rhs);
+	case operator_id_type::more:
+		return common::env::temp_storage->add(std::string_view(get_string_ptr_(entry)) > rhs);
+	default:
+		break;
+	}
+
+	return object::evaluate_(entry, info, operand);
+}
+
+slang::driver::object::entry_type *slang::driver::pointer::evaluate_wstring_(entry_type &entry, binary_info_type &info, entry_type &operand){
+	auto rhs = get_driver(operand)->to_wstring(operand);
+	if (common::env::error.has())
+		return nullptr;
+
+	switch (info.id){
+	case operator_id_type::plus:
+		return common::env::temp_storage->add((reinterpret_cast<wchar_t *>(get_string_ptr_(entry)) + rhs).c_str());
+	case operator_id_type::less:
+		return common::env::temp_storage->add(std::wstring_view(reinterpret_cast<wchar_t *>(get_string_ptr_(entry))) < rhs);
+	case operator_id_type::less_or_equal:
+		return common::env::temp_storage->add(std::wstring_view(reinterpret_cast<wchar_t *>(get_string_ptr_(entry))) <= rhs);
+	case operator_id_type::equality:
+		return common::env::temp_storage->add(std::wstring_view(reinterpret_cast<wchar_t *>(get_string_ptr_(entry))) == rhs);
+	case operator_id_type::inverse_equality:
+		return common::env::temp_storage->add(std::wstring_view(reinterpret_cast<wchar_t *>(get_string_ptr_(entry))) != rhs);
+	case operator_id_type::more_or_equal:
+		return common::env::temp_storage->add(std::wstring_view(reinterpret_cast<wchar_t *>(get_string_ptr_(entry))) >= rhs);
+	case operator_id_type::more:
+		return common::env::temp_storage->add(std::wstring_view(reinterpret_cast<wchar_t *>(get_string_ptr_(entry))) > rhs);
+	default:
+		break;
+	}
+
+	return object::evaluate_(entry, info, operand);
 }
 
 char *slang::driver::pointer::get_string_ptr_(entry_type &entry){

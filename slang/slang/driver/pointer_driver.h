@@ -13,9 +13,15 @@ namespace slang{
 
 			virtual entry_type *cast(entry_type &entry, type::object &type, cast_type options = cast_type::nil) override;
 
+			virtual uint_type size_of(entry_type &entry) override;
+
+			virtual uint64_type pointer_target(entry_type &entry) override;
+
 			virtual uint64_type value(entry_type &entry);
 
 			virtual address_head_type target(entry_type &entry);
+
+			virtual entry_type *dereference(entry_type &entry, long long offset = 0);
 
 		protected:
 			virtual entry_type *evaluate_(entry_type &entry, binary_info_type &info, entry_type &operand) override;
@@ -35,6 +41,12 @@ namespace slang{
 			virtual entry_type *static_cast_(entry_type &entry, type::object &type, cast_type options);
 
 			virtual entry_type *reinterpret_cast_(entry_type &entry, type::object &type, cast_type options);
+
+			virtual entry_type *evaluate_increment_(entry_type &entry, bool increment, bool lval, uint64_type mult = 1u);
+
+			virtual entry_type *evaluate_string_(entry_type &entry, binary_info_type &info, entry_type &operand);
+
+			virtual entry_type *evaluate_wstring_(entry_type &entry, binary_info_type &info, entry_type &operand);
 
 			virtual char *get_string_ptr_(entry_type &entry);
 		};

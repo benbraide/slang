@@ -65,7 +65,8 @@ void slang::common::env::bootstrap_(){
 	auto key = type_id_type::wchar;
 
 	for (auto id = type_id_type::wstring_; id <= type_id_type::string_; SLANG_INCREMENT_ENUM2(id)){
-		ptr = std::make_shared<type::pointer>(type_list[key]);
+		ptr = std::make_shared<type::modified>(type_list[key], type_attribute_type::const_);
+		ptr = std::make_shared<type::pointer>(ptr);
 		type_list[id] = std::make_shared<type::modified>(ptr, type_attribute_type::const_);
 		SLANG_INCREMENT_ENUM2(key);
 	}

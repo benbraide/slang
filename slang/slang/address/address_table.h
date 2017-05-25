@@ -59,6 +59,8 @@ namespace slang{
 
 			void protect();
 
+			bool is_protected(uint64_type value) const;
+
 			void set_dependency(uint64_type value, dependency_ptr_type dependency);
 
 			template <typename dependency_type, typename... arg_types>

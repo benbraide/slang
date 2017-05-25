@@ -26,6 +26,7 @@ namespace slang{
 
 			typedef type::bool_type bool_type;
 			typedef type::id type_id_type;
+			typedef type::object::attribute type_attribute_type;
 
 			typedef storage::entry entry_type;
 			typedef entry_type::attribute_type attribute_type;
@@ -81,9 +82,13 @@ namespace slang{
 
 			virtual type::object *type_of(entry_type &entry);
 
+			virtual uint_type size_of(entry_type &entry);
+
 			virtual entry_type *linked_object(entry_type &entry);
 
 			virtual uint64_type address_of(entry_type &entry);
+
+			virtual uint64_type pointer_target(entry_type &entry);
 
 			virtual bool is_indirect(entry_type &entry);
 

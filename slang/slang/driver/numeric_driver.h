@@ -91,9 +91,9 @@ namespace slang{
 						return object::evaluate_(entry, info);
 					return get_temp_storage()->add(static_cast<value_type>(~read_<value_type>(entry)));
 				case operator_id_type::decrement:
-					return evaluate_increment_<value_type>(entry, info, false, info.is_left);
+					return evaluate_increment_<value_type>(entry, false, info.is_left);
 				case operator_id_type::increment:
-					return evaluate_increment_<value_type>(entry, info, true, info.is_left);
+					return evaluate_increment_<value_type>(entry, true, info.is_left);
 				default:
 					break;
 				}
@@ -102,7 +102,7 @@ namespace slang{
 			}
 
 			template <typename value_type>
-			entry_type *evaluate_increment_(entry_type &entry, unary_info_type &info, bool increment, bool lval){
+			entry_type *evaluate_increment_(entry_type &entry, bool increment, bool lval){
 				if (!entry.is_lval())
 					return common::env::error.set_and_return<nullptr_t>("Operator requires an lvalue.", true);
 
@@ -122,6 +122,9 @@ namespace slang{
 			template <typename value_type>
 			entry_type *evaluate_integral_(entry_type &entry, binary_info_type &info, entry_type &operand){
 				auto left = convert_<value_type>(entry), right = convert_<value_type>(operand);
+				if (has_error())
+					return nullptr;
+
 				switch (info.id){
 				case operator_id_type::compound_modulus:
 					if (right == static_cast<value_type>(0))
@@ -161,6 +164,9 @@ namespace slang{
 			template <typename value_type>
 			entry_type *evaluate_binary_(entry_type &entry, binary_info_type &info, entry_type &operand){
 				auto left = convert_<value_type>(entry), right = convert_<value_type>(operand);
+				if (has_error())
+					return nullptr;
+
 				return evaluate_binary_(entry, info, operand, left, right);
 			}
 

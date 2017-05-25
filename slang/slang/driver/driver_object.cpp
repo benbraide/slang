@@ -167,6 +167,10 @@ slang::type::object *slang::driver::object::type_of(entry_type &entry){
 	return entry.type().get();
 }
 
+slang::driver::object::uint_type slang::driver::object::size_of(entry_type &entry){
+	return type_of(entry)->size();
+}
+
 slang::driver::object *slang::driver::object::get_driver(entry_type &entry){
 	return entry.type()->driver();
 }
@@ -196,6 +200,10 @@ slang::driver::object::uint64_type slang::driver::object::address_of(entry_type 
 	return entry.address_value();
 }
 
+slang::driver::object::uint64_type slang::driver::object::pointer_target(entry_type &entry){
+	return 0u;
+}
+
 bool slang::driver::object::is_indirect(entry_type &entry){
 	return SLANG_IS_ANY(entry.address_head()->attributes, address_attribute_type::is_string | address_attribute_type::indirect);
 }
@@ -219,9 +227,9 @@ slang::driver::object::entry_type *slang::driver::object::evaluate_(entry_type &
 	case lexer::operator_id::bitwise_and:
 		if (!entry.is_lval())
 			return common::env::error.set_and_return<nullptr_t>("Cannot get reference an rvalue", true);
-		return common::env::temp_storage->add_pointer(entry, type_of(entry)->reflect());
+		return common::env::temp_storage->add_pointer(entry);
 	case lexer::operator_id::sizeof_:
-		return common::env::temp_storage->add(type_of(entry)->size());
+		return common::env::temp_storage->add(size_of(entry));
 	case lexer::operator_id::typeof:
 		return common::env::temp_storage->add(*type_of(entry));
 	case lexer::operator_id::call://(this)

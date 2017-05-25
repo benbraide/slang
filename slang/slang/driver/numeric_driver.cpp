@@ -94,23 +94,53 @@ slang::driver::object::entry_type *slang::driver::numeric::evaluate_(entry_type 
 	auto operand_is_nan = target_operand->is(attribute_type::nan_);
 	if (!operand_type->is_numeric() && !operand_is_nan){
 		if (operand_type->is_string()){
-			if (info.id != operator_id_type::plus)
-				return object::evaluate_(entry, info, operand);
+			switch (info.id){
+			case operator_id_type::plus:
+				return common::env::temp_storage->add((to_string(entry) + get_driver(operand)->to_string(operand)).c_str());
+			case operator_id_type::less:
+				return common::env::temp_storage->add(to_string(entry) < get_driver(operand)->to_string(operand));
+			case operator_id_type::less_or_equal:
+				return common::env::temp_storage->add(to_string(entry) <= get_driver(operand)->to_string(operand));
+			case operator_id_type::equality:
+				return common::env::temp_storage->add(to_string(entry) == get_driver(operand)->to_string(operand));
+			case operator_id_type::inverse_equality:
+				return common::env::temp_storage->add(to_string(entry) != get_driver(operand)->to_string(operand));
+			case operator_id_type::more_or_equal:
+				return common::env::temp_storage->add(to_string(entry) >= get_driver(operand)->to_string(operand));
+			case operator_id_type::more:
+				return common::env::temp_storage->add(to_string(entry) > get_driver(operand)->to_string(operand));
+			default:
+				break;
+			}
 
-			auto value = (to_string(entry) + get_driver(operand)->to_string(operand));
-			return common::env::temp_storage->add(value.c_str(), value.size());
+			return object::evaluate_(entry, info, operand);
 		}
 
 		if (operand_type->is_wstring()){
-			if (info.id != operator_id_type::plus)
-				return object::evaluate_(entry, info, operand);
+			switch (info.id){
+			case operator_id_type::plus:
+				return common::env::temp_storage->add((to_wstring(entry) + get_driver(operand)->to_wstring(operand)).c_str());
+			case operator_id_type::less:
+				return common::env::temp_storage->add(to_wstring(entry) < get_driver(operand)->to_wstring(operand));
+			case operator_id_type::less_or_equal:
+				return common::env::temp_storage->add(to_wstring(entry) <= get_driver(operand)->to_wstring(operand));
+			case operator_id_type::equality:
+				return common::env::temp_storage->add(to_wstring(entry) == get_driver(operand)->to_wstring(operand));
+			case operator_id_type::inverse_equality:
+				return common::env::temp_storage->add(to_wstring(entry) != get_driver(operand)->to_wstring(operand));
+			case operator_id_type::more_or_equal:
+				return common::env::temp_storage->add(to_wstring(entry) >= get_driver(operand)->to_wstring(operand));
+			case operator_id_type::more:
+				return common::env::temp_storage->add(to_wstring(entry) > get_driver(operand)->to_wstring(operand));
+			default:
+				break;
+			}
 
-			auto value = (to_wstring(entry) + get_driver(operand)->to_wstring(operand));
-			return common::env::temp_storage->add(value.c_str(), value.size());
+			return object::evaluate_(entry, info, operand);
 		}
 
 		if ((target_operand = get_driver(operand)->cast(operand, *type)) == nullptr)
-			return common::env::error.set_and_return<nullptr_t>("Operator does not take specified operands", true);
+			return object::evaluate_(entry, info, operand);
 	}
 
 	auto is_nan = entry.is(attribute_type::nan_);

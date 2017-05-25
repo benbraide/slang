@@ -54,7 +54,7 @@ namespace slang{
 
 			entry *add(std::nullptr_t);
 
-			entry *add_pointer(entry &value, type_ptr_type type);
+			entry *add_pointer(entry &value);
 
 			entry *add_pointer(uint64_type value, type_ptr_type type);
 

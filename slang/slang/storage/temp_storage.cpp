@@ -61,14 +61,15 @@ slang::storage::entry *slang::storage::temp::add(std::nullptr_t){
 	return wrap(0u, common::env::type_list[type::object::id_type::nullptr_], attribute_type::block_aligned);
 }
 
-slang::storage::entry *slang::storage::temp::add_pointer(entry &value, type_ptr_type type){
+slang::storage::entry *slang::storage::temp::add_pointer(entry &value){
 	auto head = address_table->allocate_scalar(value.address_head()->value);
 	if (head == nullptr)//Failed to allocate memory
 		return nullptr;
 
+	auto type = value.type();
 	auto new_type = type->remove_modified()->reflect();
-	auto attributes = attribute_type::nil;
 
+	auto attributes = attribute_type::nil;
 	if (value.is(attribute_type::const_) || type->is_const()){//pointer to const value
 		new_type = std::make_shared<type::modified>(new_type, type_attribute_type::const_);
 		attributes = attribute_type::const_pointer;
@@ -104,7 +105,7 @@ slang::storage::entry *slang::storage::temp::add_string_(address_head_type &head
 	}
 
 	SLANG_SET(ptr_head->attributes, address::table::attribute_type::is_string);
-	return wrap(ptr_head->value, common::env::type_list[id], attribute_type::block_aligned);
+	return wrap(ptr_head->value, common::env::type_list[id], attribute_type::const_pointer | attribute_type::block_aligned);
 }
 
 void slang::storage::temp::clean_(value_type &value){
