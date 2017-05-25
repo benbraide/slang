@@ -733,6 +733,14 @@ void slang::address::table::merge_available_(uint64_type value, uint_type size){
 	}
 	else//Add entry
 		available_list_[value] = size;
+
+	if (!available_list_.empty()){
+		auto last = std::prev(available_list_.end());
+		if ((last->first + last->second) == next_){//Move next backwards
+			next_ = last->first;
+			available_list_.erase(last);
+		}
+	}
 }
 
 slang::address::table::uint64_type slang::address::table::get_available_(uint_type size, uint64_type match){
