@@ -46,7 +46,7 @@ namespace slang{
 		protected:
 			virtual entry_type *assign_(entry_type &entry, entry_type &value) override;
 
-			virtual entry_type *do_assignment_(entry_type &entry, entry_type &value);
+			virtual entry_type *do_assignment_(entry_type &entry, entry_type &value, bool is_indirect = false);
 		};
 	}
 }

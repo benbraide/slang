@@ -40,11 +40,7 @@ slang::driver::object::entry_type *slang::driver::indirect::evaluate(entry_type 
 	return get_driver(*target)->evaluate(*target, info);
 }
 
-void slang::driver::indirect::initialize(entry_type &entry){
-	auto target = linked_object(entry);
-	if (target != nullptr)
-		get_driver(*target)->initialize(*target);
-}
+void slang::driver::indirect::initialize(entry_type &entry){}
 
 bool slang::driver::indirect::to_bool(entry_type &entry){
 	auto target = linked_object(entry);
@@ -88,8 +84,12 @@ void slang::driver::indirect::convert(entry_type &entry, type_id_type id, char *
 
 void slang::driver::indirect::echo(entry_type &entry, writer_type &out, bool no_throw){
 	auto target = linked_object(entry);
-	if (target == nullptr)
-		common::env::error.set("Uninitialized value in expression", true);
+	if (target == nullptr){
+		if (no_throw)
+			object::echo(entry, out, no_throw);
+		else//Raise exception
+			common::env::error.set("Uninitialized value in expression", true);
+	}
 	else
 		get_driver(*target)->echo(*target, out, no_throw);
 }
@@ -111,7 +111,10 @@ slang::driver::object::uint_type slang::driver::indirect::size_of(entry_type &en
 }
 
 slang::driver::object::entry_type *slang::driver::indirect::linked_object(entry_type &entry){
-	auto dependency = common::env::address_table.get_dependency(value(entry));
+	if (entry.is_uninitialized())
+		return nullptr;//No linked object
+
+	auto dependency = common::env::address_table.get_dependency(entry.address_value());
 	if (dependency == nullptr || common::env::error.has())
 		return nullptr;
 
@@ -131,10 +134,11 @@ slang::driver::object::entry_type *slang::driver::indirect::assign_(entry_type &
 	if (cloned == nullptr)
 		return common::env::error.set_and_return<nullptr_t>("Failed to copy object.");
 
-	return do_assignment_(entry, *cloned);
+	++cloned->address_head()->ref_count;
+	return do_assignment_(entry, *cloned, true);
 }
 
-slang::driver::object::entry_type *slang::driver::indirect::do_assignment_(entry_type &entry, entry_type &value){
+slang::driver::object::entry_type *slang::driver::indirect::do_assignment_(entry_type &entry, entry_type &value, bool is_indirect){
 	auto dependency = common::env::address_table.get_dependency(this->value(entry));
 	if (common::env::error.has())
 		return nullptr;
@@ -148,7 +152,11 @@ slang::driver::object::entry_type *slang::driver::indirect::do_assignment_(entry
 
 	auto head = entry.cached_address_head();
 	common::env::address_table.copy(head->value, get_driver(value)->address_of(value), head->size);
-	entry.remove_attributes(attribute_type::uninitialized);
+	if (entry.is_uninitialized()){//First assignment
+		entry.remove_attributes(attribute_type::uninitialized);
+		if (is_indirect)//Set indirect flag
+			SLANG_SET(head->attributes, address_attribute_type::indirect);
+	}
 
 	return &entry;
 }
