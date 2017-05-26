@@ -127,6 +127,10 @@ bool slang::driver::object::to_bool(entry_type &entry){
 	return (convert<bool_type>(entry) == bool_type::true_);
 }
 
+slang::driver::object::bool_type slang::driver::object::to_boolean(entry_type &entry){
+	return convert<bool_type>(entry);
+}
+
 std::string slang::driver::object::to_string(entry_type &entry){
 	auto value = convert<const char *>(entry);
 	return (value == nullptr) ? std::string() : std::string(value);

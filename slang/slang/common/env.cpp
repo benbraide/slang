@@ -44,6 +44,10 @@ slang::driver::indirect slang::common::env::indirect_driver;
 
 slang::driver::ref slang::common::env::ref_driver;
 
+slang::driver::boolean slang::common::env::boolean_driver;
+
+slang::driver::byte slang::common::env::byte_driver;
+
 void slang::common::env::bootstrap(){
 	std::call_once(once_flag_, &env::bootstrap_);
 }
@@ -66,12 +70,13 @@ void slang::common::env::bootstrap_(){
 		type_list[id] = std::make_shared<type::primitive>(id);//Primitive types
 
 	type_ptr_type ptr;
-	auto key = type_id_type::wchar;
+	auto key = type_id_type::char_;
 
-	for (auto id = type_id_type::wstring_; id <= type_id_type::string_; SLANG_INCREMENT_ENUM2(id)){
+	for (auto id = type_id_type::string_; id <= type_id_type::wstring_; SLANG_INCREMENT_ENUM2(id)){
 		ptr = std::make_shared<type::modified>(type_list[key], type_attribute_type::const_);
 		ptr = std::make_shared<type::pointer>(ptr);
 		type_list[id] = std::make_shared<type::modified>(ptr, type_attribute_type::const_);
+		SLANG_INCREMENT_ENUM2(key);
 		SLANG_INCREMENT_ENUM2(key);
 	}
 

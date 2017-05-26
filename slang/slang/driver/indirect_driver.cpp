@@ -54,6 +54,14 @@ bool slang::driver::indirect::to_bool(entry_type &entry){
 	return get_driver(*target)->to_bool(*target);
 }
 
+slang::driver::object::bool_type slang::driver::indirect::to_boolean(entry_type &entry){
+	auto target = linked_object(entry);
+	if (target == nullptr)
+		return common::env::error.set_and_return<bool_type>("Uninitialized value in expression", true);
+
+	return get_driver(*target)->to_boolean(*target);
+}
+
 std::string slang::driver::indirect::to_string(entry_type &entry){
 	auto target = linked_object(entry);
 	if (target == nullptr)

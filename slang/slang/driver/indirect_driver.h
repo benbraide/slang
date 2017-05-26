@@ -25,6 +25,8 @@ namespace slang{
 
 			virtual bool to_bool(entry_type &entry) override;
 
+			virtual bool_type to_boolean(entry_type &entry);
+
 			virtual std::string to_string(entry_type &entry) override;
 
 			virtual std::wstring to_wstring(entry_type &entry) override;

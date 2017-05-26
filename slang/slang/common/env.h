@@ -23,6 +23,8 @@
 #include "../driver/numeric_driver.h"
 #include "../driver/pointer_driver.h"
 #include "../driver/ref_driver.h"
+#include "../driver/boolean_driver.h"
+#include "../driver/byte_driver.h"
 
 #include "../utilities/thread_pool.h"
 
@@ -80,6 +82,8 @@ namespace slang{
 			static driver::pointer pointer_driver;
 			static driver::indirect indirect_driver;
 			static driver::ref ref_driver;
+			static driver::boolean boolean_driver;
+			static driver::byte byte_driver;
 
 			static void bootstrap();
 

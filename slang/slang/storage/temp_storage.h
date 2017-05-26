@@ -39,11 +39,16 @@ namespace slang{
 
 			template <typename value_type>
 			entry *add(value_type value){
+				return add_typed(value, type::static_mapper::map(type::mapper<value_type>::id));
+			}
+
+			template <typename value_type>
+			entry *add_typed(value_type value, type_ptr_type type){
 				auto head = address_table->allocate_scalar(value);
 				if (head == nullptr)//Failed to allocate memory
 					return nullptr;
 
-				return wrap(head->value, type::static_mapper::map(type::mapper<value_type>::id), attribute_type::block_aligned);
+				return wrap(head->value, type, attribute_type::block_aligned);
 			}
 
 			entry *add(const char *value, size_type size = 0u);

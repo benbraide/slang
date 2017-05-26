@@ -37,6 +37,13 @@ int slang::type::object::score(const object *type, bool is_entry, bool check_con
 	if (type == this)
 		return SLANG_MAX_TYPE_SCORE;
 
+	if (is_entry){
+		if (check_const && type->is_const())
+			return SLANG_MIN_TYPE_SCORE;
+	}
+	else if (type->is_const() || type->is_ref())
+		return SLANG_MIN_TYPE_SCORE;
+
 	if (is_auto() || type->is_auto())
 		return (SLANG_MAX_TYPE_SCORE - 1);
 
@@ -169,6 +176,7 @@ bool slang::type::object::is_numeric() const{
 	switch (id()){
 	case id_type::char_:
 	case id_type::uchar:
+	case id_type::wchar:
 	case id_type::short_:
 	case id_type::ushort:
 	case id_type::int_:
@@ -192,6 +200,7 @@ bool slang::type::object::is_integral() const{
 	switch (id()){
 	case id_type::char_:
 	case id_type::uchar:
+	case id_type::wchar:
 	case id_type::short_:
 	case id_type::ushort:
 	case id_type::int_:

@@ -35,6 +35,13 @@ int slang::type::array_type::score(const object *type, bool is_entry, bool check
 	if (value != SLANG_MIN_TYPE_SCORE)
 		return value;
 
+	if (is_entry){
+		if (check_const && type->is_const())
+			return SLANG_MIN_TYPE_SCORE;
+	}
+	else if (type->is_const() || type->is_ref())
+		return SLANG_MIN_TYPE_SCORE;
+
 	if (!type->is_array())
 		return SLANG_MIN_TYPE_SCORE;
 

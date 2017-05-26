@@ -63,6 +63,8 @@ namespace slang{
 
 			virtual bool to_bool(entry_type &entry);
 
+			virtual bool_type to_boolean(entry_type &entry);
+
 			virtual std::string to_string(entry_type &entry);
 
 			virtual std::wstring to_wstring(entry_type &entry);
@@ -71,9 +73,7 @@ namespace slang{
 
 			template <typename value_type>
 			value_type convert(entry_type &entry){
-				auto value = std::remove_const_t<value_type>();
-				convert(entry, type::mapper<value_type>::id, (char *)(&value));
-				return value;
+				return convert_<value_type>(entry, std::bool_constant<std::is_same_v<value_type, bool>>());
 			}
 
 			virtual void echo(entry_type &entry);
@@ -108,6 +108,20 @@ namespace slang{
 			virtual entry_type *assign_(entry_type &entry, entry_type &value);
 
 			virtual void convert_(entry_type &entry, type_id_type id, char *buffer);
+
+			template <typename value_type>
+			value_type convert_(entry_type &entry, std::false_type){
+				auto value = std::remove_const_t<value_type>();
+				convert(entry, type::mapper<value_type>::id, (char *)(&value));
+				return value;
+			}
+
+			template <typename value_type>
+			value_type convert_(entry_type &entry, std::true_type){
+				auto value = bool_type::indeterminate;
+				convert(entry, type_id_type::bool_, reinterpret_cast<char *>(&value));
+				return (value == bool_type::true_);
+			}
 
 			virtual void echo_(entry_type &entry, writer_type &out, bool no_throw);
 		};

@@ -17,9 +17,11 @@ std::string slang::driver::numeric::to_string(entry_type &entry){
 
 	switch (type_of(entry)->id()){
 	case type_id_type::char_:
-		return std::to_string(common::env::address_table.read<char>(entry.address_value()));
+		return std::string(1u, common::env::address_table.read<char>(entry.address_value()));
 	case type_id_type::uchar:
-		return std::to_string(common::env::address_table.read<unsigned char>(entry.address_value()));
+		return std::string(1u, static_cast<char>(common::env::address_table.read<unsigned char>(entry.address_value())));
+	case type_id_type::wchar:
+		return std::string(1u, static_cast<char>(common::env::address_table.read<wchar_t>(entry.address_value())));
 	case type_id_type::short_:
 		return std::to_string(common::env::address_table.read<short>(entry.address_value()));
 	case type_id_type::ushort:
@@ -55,9 +57,11 @@ std::wstring slang::driver::numeric::to_wstring(entry_type &entry){
 
 	switch (type_of(entry)->id()){
 	case type_id_type::char_:
-		return std::to_wstring(common::env::address_table.read<char>(entry.address_value()));
+		return std::wstring(1u, static_cast<wchar_t>(common::env::address_table.read<char>(entry.address_value())));
 	case type_id_type::uchar:
-		return std::to_wstring(common::env::address_table.read<unsigned char>(entry.address_value()));
+		return std::wstring(1u, static_cast<wchar_t>(common::env::address_table.read<unsigned char>(entry.address_value())));
+	case type_id_type::wchar:
+		return std::wstring(1u, common::env::address_table.read<wchar_t>(entry.address_value()));
 	case type_id_type::short_:
 		return std::to_wstring(common::env::address_table.read<short>(entry.address_value()));
 	case type_id_type::ushort:
@@ -314,6 +318,10 @@ void slang::driver::numeric::convert_(entry_type &entry, type_id_type id, char *
 		common::env::address_table.convert_numeric(entry.address_value(), entry.type()->is_floating_point(),
 			*reinterpret_cast<unsigned char *>(buffer));
 		break;
+	case type_id_type::wchar:
+		common::env::address_table.convert_numeric(entry.address_value(), entry.type()->is_floating_point(),
+			*reinterpret_cast<wchar_t *>(buffer));
+		break;
 	case type_id_type::short_:
 		common::env::address_table.convert_numeric(entry.address_value(), entry.type()->is_floating_point(),
 			*reinterpret_cast<short *>(buffer));
@@ -365,8 +373,10 @@ void slang::driver::numeric::convert_(entry_type &entry, type_id_type id, char *
 }
 
 void slang::driver::numeric::echo_(entry_type &entry, writer_type &out, bool no_throw){
-	auto value = (prefix_(entry) + to_string(entry) + suffix_(entry));
-	out.write(value.c_str(), value.size());
+	if (type_of(entry)->id() == type_id_type::wchar)
+		out.write((L"'" + to_wstring(entry) + L"'w").c_str());
+	else//Non-wide
+		out.write((prefix_(entry) + to_string(entry) + suffix_(entry)).c_str());
 }
 
 slang::driver::object::entry_type *slang::driver::numeric::cast_(entry_type &entry, type_id_type id){
@@ -376,6 +386,9 @@ slang::driver::object::entry_type *slang::driver::numeric::cast_(entry_type &ent
 			type_of(entry)->is_floating_point()));
 	case type_id_type::uchar:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<unsigned char>(entry.address_value(),
+			type_of(entry)->is_floating_point()));
+	case type_id_type::wchar:
+		return common::env::temp_storage->add(common::env::address_table.convert_numeric<wchar_t>(entry.address_value(),
 			type_of(entry)->is_floating_point()));
 	case type_id_type::short_:
 		return common::env::temp_storage->add(common::env::address_table.convert_numeric<short>(entry.address_value(),
@@ -423,10 +436,11 @@ slang::driver::object::entry_type *slang::driver::numeric::static_cast_(entry_ty
 		return value;
 
 	if (type.id() == type_id_type::byte){
-		if (!SLANG_IS(options, cast_type::is_explicit) || !type.is_numeric())
+		if (!SLANG_IS(options, cast_type::is_explicit) || !type.is_integral())
 			return nullptr;
-		return nullptr;
-		//return common::env::create(const_cast<e::type::base *>(type)->get_ptr(), get_value_<unsigned char, common::env>(entry));
+		
+		return common::env::temp_storage->add_typed(common::env::address_table.convert_numeric<byte::uchar_type>(entry.address_value(),
+			type_of(entry)->is_floating_point()), common::env::map_type(type_id_type::byte));
 	}
 
 	if (type.is_const_string()){
@@ -441,7 +455,7 @@ slang::driver::object::entry_type *slang::driver::numeric::static_cast_(entry_ty
 }
 
 slang::driver::object::entry_type *slang::driver::numeric::reinterpret_cast_(entry_type &entry, type::object &type, cast_type options){
-	if (!type.is_numeric())
+	if (!type.is_integral())
 		return nullptr;
 
 	if (type.is_strong_pointer())//Cast converted value

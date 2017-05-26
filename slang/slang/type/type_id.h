@@ -13,9 +13,9 @@ namespace slang{
 			bool_,
 			bit,
 			byte,
-			wchar,
 			char_,
 			uchar,
+			wchar,
 			short_,
 			ushort,
 			int_,
@@ -40,8 +40,8 @@ namespace slang{
 			union_,
 			struct_,
 			class_,
-			wstring_,
 			string_,
+			wstring_,
 			nan,
 		};
 	}

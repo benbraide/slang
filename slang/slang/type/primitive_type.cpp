@@ -126,19 +126,15 @@ slang::type::primitive::~primitive(){}
 
 slang::type::object::driver_object_type *slang::type::primitive::driver() const{
 	switch (id_){
-	case id_type::any:
-		return nullptr;
-	case id_type::auto_:
 	case id_type::bool_:
-		return nullptr;
+		return &common::env::boolean_driver;
 	case id_type::bit:
 		return nullptr;
 	case id_type::byte:
-		return nullptr;
-	case id_type::wchar:
-		return nullptr;
+		return &common::env::byte_driver;
 	case id_type::char_:
 	case id_type::uchar:
+	case id_type::wchar:
 	case id_type::short_:
 	case id_type::ushort:
 	case id_type::int_:
@@ -153,6 +149,8 @@ slang::type::object::driver_object_type *slang::type::primitive::driver() const{
 	case id_type::nan:
 		return &common::env::numeric_driver;
 	case id_type::nullptr_:
+		return &common::env::pointer_driver;
+	case id_type::any:
 	case id_type::pointer:
 	case id_type::array_:
 	case id_type::function:
@@ -182,6 +180,13 @@ int slang::type::primitive::score(const object *type, bool is_entry, bool check_
 	auto value = object::score(type, is_entry, check_const);
 	if (value != SLANG_MIN_TYPE_SCORE)
 		return value;
+
+	if (is_entry){
+		if (check_const && type->is_const())
+			return SLANG_MIN_TYPE_SCORE;
+	}
+	else if (type->is_const() || type->is_ref())
+		return SLANG_MIN_TYPE_SCORE;
 
 	if (id_ == type->id())
 		return (type->is_specific() ? SLANG_MIN_TYPE_SCORE : SLANG_MAX_TYPE_SCORE);
