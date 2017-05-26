@@ -48,6 +48,8 @@ slang::driver::boolean slang::common::env::boolean_driver;
 
 slang::driver::byte slang::common::env::byte_driver;
 
+slang::driver::type_driver slang::common::env::type_driver;
+
 void slang::common::env::bootstrap(){
 	std::call_once(once_flag_, &env::bootstrap_);
 }

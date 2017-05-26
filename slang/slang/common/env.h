@@ -25,6 +25,7 @@
 #include "../driver/ref_driver.h"
 #include "../driver/boolean_driver.h"
 #include "../driver/byte_driver.h"
+#include "../driver/type_driver.h"
 
 #include "../utilities/thread_pool.h"
 
@@ -84,6 +85,7 @@ namespace slang{
 			static driver::ref ref_driver;
 			static driver::boolean boolean_driver;
 			static driver::byte byte_driver;
+			static driver::type_driver type_driver;
 
 			static void bootstrap();
 

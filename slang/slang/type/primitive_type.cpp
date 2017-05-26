@@ -156,7 +156,7 @@ slang::type::object::driver_object_type *slang::type::primitive::driver() const{
 	case id_type::function:
 		return &common::env::indirect_driver;
 	case id_type::type_:
-		return nullptr;
+		return &common::env::type_driver;
 	case id_type::node_:
 		return nullptr;
 	case id_type::storage_:

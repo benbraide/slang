@@ -94,7 +94,7 @@ bool slang::type::object::is(id_type id) const{
 }
 
 bool slang::type::object::is_same(const object *type) const{
-	return (score(type) == SLANG_MAX_TYPE_SCORE);
+	return (score(type) >= (SLANG_MAX_TYPE_SCORE - 2));
 }
 
 bool slang::type::object::is_compatible(const object *type) const{

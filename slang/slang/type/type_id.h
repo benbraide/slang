@@ -34,6 +34,7 @@ namespace slang{
 			type_,
 			node_,
 			storage_,
+			variant,
 			compile_t,
 			runtime_t,
 			enum_,
