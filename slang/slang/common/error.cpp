@@ -29,32 +29,19 @@ void slang::common::error::set(type type, storage_entry_type *object){
 }
 
 void slang::common::error::set(const char *value, bool is_runtime){
-	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled) || has())
-		return;
-
-	auto entry = common::env::temp_storage->add(value);
-	if (entry == nullptr)
-		return;
-
-	if (!is_runtime){//Return string object
-		set(entry);
-		return;
-	}
-
-	storage_entry_type entry_copy(entry->owner(), entry->address_value(), common::env::map_type(type_id_type::runtime_t));
-	set(&entry_copy);
+	return set_(value, true);
 }
 
-void slang::common::error::set(const char *value, size_type size){
-	set(common::env::temp_storage->add(value, size));
+void slang::common::error::set_compile(const char *value){
+	return set_(value, false);
 }
 
-void slang::common::error::set(const std::string &value, const index_type &index, bool is_runtime){
+void slang::common::error::set(const std::string &value, const index_type &index){
 	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled))
 		return;
 
 	auto index_string = ("line " + std::to_string(index.line) + ", col " + std::to_string(index.column));
-	set(std::string("Exception thrown at " + index_string + ": " + value).c_str(), is_runtime);
+	set_(std::string("Exception thrown at " + index_string + ": " + value).c_str(), false);
 }
 
 void slang::common::error::warn(const char *value){
@@ -153,4 +140,18 @@ bool slang::common::error::is_continue() const{
 
 bool slang::common::error::is_suppressed() const{
 	return (type_ == type::suppressed);
+}
+
+void slang::common::error::set_(const char *value, bool is_runtime){
+	if (!SLANG_IS(common::env::runtime.state, common::env::runtime_state::error_enabled) || has())
+		return;
+
+	auto entry = common::env::temp_storage->add(value);
+	if (entry == nullptr)
+		return;
+
+	if (is_runtime)//Change string type
+		entry->set_type(common::env::map_type(type_id_type::runtime_t));
+
+	set(entry);
 }

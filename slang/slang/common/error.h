@@ -32,9 +32,9 @@ namespace slang{
 
 			void set(const char *value, bool is_runtime = false);
 
-			void set(const char *value, size_type size);
+			void set_compile(const char *value);
 
-			void set(const std::string &value, const index_type &index, bool is_runtime = false);
+			void set(const std::string &value, const index_type &index);
 
 			template <typename value_type>
 			value_type set_and_return(const char *value, bool is_runtime = false){
@@ -43,8 +43,14 @@ namespace slang{
 			}
 
 			template <typename value_type>
-			value_type set_and_return(const std::string &value, const index_type &index, bool is_runtime = false){
-				set(value, index, is_runtime);
+			value_type set_compile_and_return(const char *value){
+				set_compile(value);
+				return value_type();
+			}
+
+			template <typename value_type>
+			value_type set_and_return(const std::string &value, const index_type &index){
+				set(value, index);
 				return value_type();
 			}
 
@@ -73,6 +79,8 @@ namespace slang{
 			bool is_suppressed() const;
 
 		private:
+			void set_(const char *value, bool is_runtime);
+
 			type type_ = type::nil;
 			storage_entry_type object_;
 		};

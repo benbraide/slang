@@ -14,8 +14,8 @@ slang::address::table::~table(){
 		}
 
 		for (auto &entry : tls_captures_){
-			if (entry.second.ptr != nullptr)
-				delete[] entry.second.ptr;
+			if (entry.ptr != nullptr)
+				delete[] entry.ptr;
 		}
 
 		for (auto &entry : tls_){//Free thread local storage
@@ -329,16 +329,16 @@ void slang::address::table::read(uint64_type value, char *buffer, uint_type size
 void slang::address::table::on_thread_entry_(){
 	common::env::runtime.state = common::env::runtime_state::error_enabled;
 	for (auto &entry : tls_captures_){//Initialize thread local storage
-		auto &tls_entry = tls_[entry.first];
+		auto &tls_entry = tls_[entry.value];
 
-		tls_entry = entry.second;
+		tls_entry = entry;
 		if (tls_entry.ptr != nullptr){//Duplicate bytes
 			tls_entry.ptr = new char[tls_entry.actual_size];
-			std::strncpy(tls_entry.ptr, entry.second.ptr, tls_entry.actual_size);
+			std::strncpy(tls_entry.ptr, entry.ptr, tls_entry.actual_size);
 		}
 
-		if (SLANG_IS_ANY(entry.second.attributes, attribute_type::is_string | attribute_type::indirect)){
-			auto linked_entry = find_(entry.first);
+		if (SLANG_IS_ANY(entry.attributes, attribute_type::is_string | attribute_type::indirect)){
+			auto linked_entry = find_(entry.value);
 			if (linked_entry != nullptr)
 				++linked_entry->ref_count;
 		}
@@ -346,6 +346,9 @@ void slang::address::table::on_thread_entry_(){
 }
 
 void slang::address::table::on_thread_exit_(){
+	if (common::env::exiting)
+		return;
+
 	for (auto &entry : tls_){//Free thread local storage
 		if (entry.second.ptr != nullptr){
 			if (SLANG_IS_ANY(entry.second.attributes, attribute_type::is_string | attribute_type::indirect))
@@ -361,9 +364,8 @@ void slang::address::table::capture_tls_(uint64_type value){
 		return;
 
 	SLANG_SET(entry->attributes, attribute_type::tls);
-	auto &capture = tls_captures_[value];
+	auto &capture = *tls_captures_.emplace(tls_captures_.end(), *entry);
 
-	capture = *entry;
 	if (capture.ptr != nullptr){//Duplicate bytes
 		capture.ptr = new char[capture.actual_size];
 		std::strncpy(capture.ptr, entry->ptr, capture.actual_size);

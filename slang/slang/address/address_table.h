@@ -39,6 +39,7 @@ namespace slang{
 
 			typedef std::unordered_map<uint64_type, head> head_list_type;
 			typedef std::map<uint64_type, uint_type> available_list_type;
+			typedef std::list<head> capture_list_type;
 
 			typedef std::shared_ptr<dependency> dependency_ptr_type;
 			typedef std::unordered_map<uint64_type, dependency_ptr_type> dependency_list_type;
@@ -363,7 +364,7 @@ namespace slang{
 			uint64_type next_;
 			uint64_type protected_;
 			head_list_type head_list_;
-			head_list_type tls_captures_;
+			capture_list_type tls_captures_;
 			available_list_type available_list_;
 			dependency_list_type dependencies_;
 			watcher_list_type watchers_;

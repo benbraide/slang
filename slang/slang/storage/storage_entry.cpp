@@ -52,6 +52,10 @@ slang::storage::entry::address_head_type *slang::storage::entry::cached_address_
 	return &address_head_;
 }
 
+void slang::storage::entry::set_type(type_ptr_type value){
+	type_ = value;
+}
+
 slang::storage::entry::type_ptr_type slang::storage::entry::type() const{
 	return type_;
 }
