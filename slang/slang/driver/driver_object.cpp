@@ -204,6 +204,10 @@ slang::driver::object::uint64_type slang::driver::object::address_of(entry_type 
 	return entry.address_value();
 }
 
+slang::driver::object::address_head_type *slang::driver::object::address_head_of(entry_type &entry){
+	return entry.address_head();
+}
+
 slang::driver::object::uint64_type slang::driver::object::pointer_target(entry_type &entry){
 	return 0u;
 }

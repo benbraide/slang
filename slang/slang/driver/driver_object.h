@@ -88,6 +88,8 @@ namespace slang{
 
 			virtual uint64_type address_of(entry_type &entry);
 
+			virtual address_head_type *address_head_of(entry_type &entry);
+
 			virtual uint64_type pointer_target(entry_type &entry);
 
 			virtual bool is_indirect(entry_type &entry);

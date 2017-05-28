@@ -121,6 +121,14 @@ slang::driver::object::entry_type *slang::driver::indirect::linked_object(entry_
 	return &dynamic_cast<address::indirect_dependency *>(dependency)->value();
 }
 
+slang::driver::object::address_head_type *slang::driver::indirect::address_head_of(entry_type &entry){
+	auto target = linked_object(entry);
+	if (target == nullptr)
+		return nullptr;
+
+	return get_driver(*target)->address_head_of(*target);
+}
+
 slang::driver::object::uint64_type slang::driver::indirect::value(entry_type &entry){
 	return common::env::address_table.read<uint64_type>(entry.address_value());
 }

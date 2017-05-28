@@ -48,6 +48,8 @@ namespace slang{
 
 			virtual entry_type *evaluate_wstring_(entry_type &entry, binary_info_type &info, entry_type &operand);
 
+			virtual entry_type *assign_str_(entry_type &entry, entry_type &value, object &driver);
+
 			virtual char *get_string_ptr_(entry_type &entry);
 		};
 	}

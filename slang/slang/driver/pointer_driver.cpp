@@ -166,12 +166,25 @@ slang::driver::object::entry_type *slang::driver::pointer::evaluate_(entry_type 
 
 slang::driver::object::entry_type *slang::driver::pointer::assign_(entry_type &entry, entry_type &value){
 	auto driver = get_driver(value);
-	auto compatible_value = driver->cast(value, *type_of(entry));
+	auto type = type_of(entry), value_type = driver->type_of(value);
+	if (entry.is(attribute_type::block_aligned) && value.is(attribute_type::block_aligned)){
+		if (type->is_const_string() && value_type->is_const_string()){
+			if (assign_str_(entry, value, *driver) != nullptr)
+				return &entry;
+		}
+		else if (type->is_const_wstring() && value_type->is_const_wstring()){
+			if (assign_str_(entry, value, *driver) != nullptr)
+				return &entry;
+		}
+	}
+
+	auto compatible_value = driver->cast(value, *type);
 	if (compatible_value == nullptr || common::env::error.has())
 		return common::env::error.set_and_return<nullptr_t>("Object is not compatible with target type", true);
 
 	auto head = entry.cached_address_head();
 	common::env::address_table.copy(head->value, driver->address_of(value), head->size);
+	SLANG_REMOVE(head->attributes, address_attribute_type::is_string);
 
 	return &entry;
 }
@@ -408,6 +421,29 @@ slang::driver::object::entry_type *slang::driver::pointer::evaluate_wstring_(ent
 	}
 
 	return object::evaluate_(entry, info, operand);
+}
+
+slang::driver::object::entry_type *slang::driver::pointer::assign_str_(entry_type &entry, entry_type &value, object &driver){
+	if (common::env::error.has())
+		return &entry;
+
+	auto value_head = driver.address_head_of(value);
+	if (value_head == nullptr || !SLANG_IS(value_head->attributes, address_attribute_type::is_string))
+		return nullptr;
+
+	auto string_head = common::env::address_table.find(common::env::address_table.read<uint64_type>(value_head->value));
+	if (string_head == nullptr){
+		common::env::error.clear();//Clear any errors raised
+		return nullptr;
+	}
+
+	auto head = entry.cached_address_head();
+	common::env::address_table.copy(head->value, value_head->value, head->size);
+
+	++string_head->ref_count;
+	SLANG_SET(head->attributes, address_attribute_type::is_string);
+
+	return &entry;
 }
 
 char *slang::driver::pointer::get_string_ptr_(entry_type &entry){

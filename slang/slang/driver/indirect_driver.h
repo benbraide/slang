@@ -41,6 +41,8 @@ namespace slang{
 
 			virtual entry_type *linked_object(entry_type &entry) override;
 
+			virtual address_head_type *address_head_of(entry_type &entry) override;
+
 			virtual uint64_type value(entry_type &entry);
 
 		protected:

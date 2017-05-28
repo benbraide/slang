@@ -785,4 +785,8 @@ void slang::address::table::set_locked_state_(bool is_locked) const{
 		SLANG_REMOVE(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 }
 
+void slang::address::table::str_cpy_(char *destination, const char *source, uint_type count){
+	std::strncpy(destination, source, count);
+}
+
 thread_local slang::address::table::head_list_type slang::address::table::tls_;

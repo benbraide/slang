@@ -96,7 +96,7 @@ namespace slang{
 				auto entry = allocate(sizeof(value_type));
 				if (entry != nullptr){//Successful allocation
 					entry->attributes = attribute_type::write_protect;
-					*reinterpret_cast<value_type *>(entry->ptr) = value;
+					str_cpy_(entry->ptr, reinterpret_cast<const char *>(&value), entry->size);
 				}
 
 				return entry;
@@ -113,10 +113,7 @@ namespace slang{
 				auto entry = allocate(size * sizeof(value_type));
 				if (entry != nullptr){//Successful allocation
 					entry->attributes = attribute_type::write_protect;
-
-					auto ptr = (const char *)value;//Cast to bytes
-					for (auto i = 0u; i < entry->size; ++i)//Copy bytes
-						*(entry->ptr + i) = *(ptr + i);
+					str_cpy_(entry->ptr, (const char *)value, entry->size);
 				}
 
 				return entry;
@@ -298,7 +295,7 @@ namespace slang{
 				if (entry != nullptr && entry->actual_size >= sizeof(value_type))
 					return *reinterpret_cast<value_type *>(entry->ptr);
 
-				value_type out_value = value_type();
+				auto out_value = value_type();
 				read_(value, reinterpret_cast<char *>(&out_value), static_cast<uint_type>(sizeof(value_type)));
 
 				return out_value;
@@ -358,6 +355,8 @@ namespace slang{
 			bool is_locked_() const;
 
 			void set_locked_state_(bool is_locked) const;
+
+			void str_cpy_(char *destination, const char *source, uint_type count);
 
 			static thread_local head_list_type tls_;
 
