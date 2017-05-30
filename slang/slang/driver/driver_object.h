@@ -92,6 +92,8 @@ namespace slang{
 
 			virtual uint64_type pointer_target(entry_type &entry);
 
+			virtual uint64_type enum_value(entry_type &entry);
+
 			virtual bool is_indirect(entry_type &entry);
 
 			static object *get_driver(entry_type &entry);

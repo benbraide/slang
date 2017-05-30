@@ -43,6 +43,10 @@ namespace slang{
 
 			virtual address_head_type *address_head_of(entry_type &entry) override;
 
+			virtual uint64_type pointer_target(entry_type &entry) override;
+
+			virtual uint64_type enum_value(entry_type &entry) override;
+
 			virtual uint64_type value(entry_type &entry);
 
 		protected:

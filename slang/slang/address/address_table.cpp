@@ -26,6 +26,9 @@ slang::address::table::~table(){
 }
 
 void slang::address::table::on_thread_entry(){
+	if (common::env::exiting)
+		return;
+
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 		exclusive_lock_type guard(lock_);
@@ -38,6 +41,9 @@ void slang::address::table::on_thread_entry(){
 }
 
 void slang::address::table::on_thread_exit(){
+	if (common::env::exiting)
+		return;
+
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 		exclusive_lock_type guard(lock_);
@@ -50,6 +56,9 @@ void slang::address::table::on_thread_exit(){
 }
 
 void slang::address::table::capture_tls(uint64_type value){
+	if (common::env::exiting)
+		return;
+
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 		exclusive_lock_type guard(lock_);
@@ -79,6 +88,9 @@ void slang::address::table::set_dependency(uint64_type value, dependency_ptr_typ
 }
 
 slang::address::watcher *slang::address::table::watch(uint64_type value, watcher_ptr_type watcher){
+	if (common::env::exiting)
+		return nullptr;
+
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 		exclusive_lock_type guard(lock_);
@@ -121,6 +133,9 @@ slang::address::dependency *slang::address::table::get_dependency(uint64_type va
 }
 
 bool slang::address::table::deallocate(uint64_type value){
+	if (common::env::exiting)
+		return true;
+
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 		exclusive_lock_type guard(lock_);
@@ -135,6 +150,9 @@ bool slang::address::table::deallocate(uint64_type value){
 }
 
 slang::address::head *slang::address::table::allocate(uint_type size){
+	if (common::env::exiting)
+		return nullptr;
+
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 		exclusive_lock_type guard(lock_);
@@ -149,6 +167,9 @@ slang::address::head *slang::address::table::allocate(uint_type size){
 }
 
 slang::address::head *slang::address::table::allocate(uint_type count, uint_type size){
+	if (common::env::exiting)
+		return nullptr;
+
 	if (!is_locked_()){
 		SLANG_SET(common::env::runtime.state, common::env::runtime_state::address_table_locked);
 		exclusive_lock_type guard(lock_);

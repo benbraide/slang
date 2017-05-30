@@ -212,6 +212,10 @@ slang::driver::object::uint64_type slang::driver::object::pointer_target(entry_t
 	return 0u;
 }
 
+slang::driver::object::uint64_type slang::driver::object::enum_value(entry_type &entry){
+	return 0u;
+}
+
 bool slang::driver::object::is_indirect(entry_type &entry){
 	return SLANG_IS_ANY(entry.address_head()->attributes, address_attribute_type::is_string | address_attribute_type::indirect);
 }
@@ -232,15 +236,15 @@ slang::driver::object::entry_type *slang::driver::object::evaluate_(entry_type &
 		return common::env::error.set_and_return<nullptr_t>("Operator does not take specified operand", true);
 
 	switch (info.id){
-	case lexer::operator_id::bitwise_and:
+	case operator_id_type::bitwise_and:
 		if (!entry.is_lval())
 			return common::env::error.set_and_return<nullptr_t>("Cannot get reference an rvalue", true);
 		return common::env::temp_storage->add_pointer(entry);
-	case lexer::operator_id::sizeof_:
+	case operator_id_type::sizeof_:
 		return common::env::temp_storage->add(size_of(entry));
-	case lexer::operator_id::typeof:
+	case operator_id_type::typeof:
 		return common::env::temp_storage->add(*type_of(entry));
-	case lexer::operator_id::call://(this)
+	case operator_id_type::call://(this)
 		return &entry;
 	default:
 		break;
@@ -248,16 +252,6 @@ slang::driver::object::entry_type *slang::driver::object::evaluate_(entry_type &
 
 	if (entry.is_uninitialized())
 		return common::env::error.set_and_return<nullptr_t>("Uninitialized value in expression", true);
-
-	switch (info.id){
-	case lexer::operator_id::relational_not:
-	{
-		auto value = to_bool(entry);
-		return common::env::error.has() ? nullptr : common::env::temp_storage->add(value);
-	}
-	default:
-		break;
-	}
 
 	return common::env::error.set_and_return<nullptr_t>("Operator does not take specified operand", true);
 }

@@ -33,6 +33,18 @@ slang::driver::object::entry_type *slang::driver::indirect::evaluate(entry_type 
 }
 
 slang::driver::object::entry_type *slang::driver::indirect::evaluate(entry_type &entry, unary_info_type &info){
+	if (info.is_left){
+		switch (info.id){
+		case operator_id_type::bitwise_and:
+		case operator_id_type::sizeof_:
+		case operator_id_type::typeof:
+		case operator_id_type::call:
+			return object::evaluate(entry, info);
+		default:
+			break;
+		}
+	}
+
 	auto target = linked_object(entry);
 	if (target == nullptr)
 		return common::env::error.set_and_return<nullptr_t>("Uninitialized value in expression", true);
@@ -127,6 +139,22 @@ slang::driver::object::address_head_type *slang::driver::indirect::address_head_
 		return nullptr;
 
 	return get_driver(*target)->address_head_of(*target);
+}
+
+slang::driver::object::uint64_type slang::driver::indirect::pointer_target(entry_type &entry){
+	auto target = linked_object(entry);
+	if (target == nullptr)
+		return 0u;
+
+	return get_driver(*target)->pointer_target(*target);
+}
+
+slang::driver::object::uint64_type slang::driver::indirect::enum_value(entry_type &entry){
+	auto target = linked_object(entry);
+	if (target == nullptr)
+		return 0u;
+
+	return get_driver(*target)->enum_value(*target);
 }
 
 slang::driver::object::uint64_type slang::driver::indirect::value(entry_type &entry){
